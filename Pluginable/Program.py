@@ -26,11 +26,6 @@ class Program(Logger):
   def initPlugins(self):
     self.logNote('Loading plugins')
     self.plgLoader.load()
-    for key, plugin in self.plugins.items():
-      self.logDebug(key, plugin)
-      for k, task in plugin.tasks.items():
-        self.logDebug('  ', k, task)
-      print()
     self.initialized = True
 
   def run(self):

@@ -51,7 +51,6 @@ class PluginLoader(Logger):
 
     # Wrap a plugin
     elements = [k for k in locals().keys() if k not in ['preExecLocals']+preExecLocals]
-    print(f'elements = {elements}')
     PluginCls = eval(pluginKey)
     config = eval('Config')
     helpers = [eval(elm) for elm in elements if elm[0] != elm[0].lower() and \
