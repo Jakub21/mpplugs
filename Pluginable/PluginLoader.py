@@ -36,14 +36,15 @@ class PluginLoader(Logger):
 
     # Preparations
     preScopeLocals = list(set(locals().keys()))
-    exec(scopeFile)
+    code = scopeFile
+    for file in helperFiles: code += file
+    exec(code)
     globals().update({k:v for k, v in locals().items() if k not in preScopeLocals})
 
     preExecLocals = list(set(locals().keys()))
 
     # Execute code
     code = configFile + pluginFile
-    for file in helperFiles: code += file
     for file in taskFiles: code += file
     del file
     exec(code)
