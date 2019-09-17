@@ -3,6 +3,14 @@ Pluginable is a framework for Python applications with text or graphical user in
 
 Pluginable helps to create modular applications with setup + loop idea common for example in microcomputer or GUI programming.
 
+
+### Applications
+Early versions of this software were tested with plugins that used the following packages.
+- `PyGame`
+- `TkInter`
+- `socket`
+
+
 ### Usage
 
 #### Installation
@@ -48,9 +56,3 @@ To add task to the task queue call `pushTask` method of the program. You can acc
 Pluginable Program class has some settings you can adjust in your `main.py` file. Here is a list of them.
 - `tasksPerTick` - Number of tasks taken from the task queue and executed in every program loop iteration. Defaults to 1.
 - `raiseOnTaskError` - This boolean settings, if enabled, makes program throw an error when there is an exception in a task. Defaults to False.
-
-### Applications
-Early versions of this software were tested with plugins that used the following packages.
-- `PyGame`
-- `TkInter`
-- `socket`
