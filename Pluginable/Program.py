@@ -16,6 +16,7 @@ class Program(Logger):
     self.properQuit = False
     self.settings = Namespace(
       tasksPerTick = 1,
+      raiseOnTaskError = False,
     )
     self.plugins = Namespace() # filled by loader
 
@@ -64,6 +65,8 @@ class Program(Logger):
       trbk = traceback.format_exc()
       msg = 'An error occurred during execution of task'
       self.logError(f'{msg} "{task.plugin.key}.{task.key}"\n{trbk}')
+      if self.settings.raiseOnTaskError:
+        raise
     return True
 
   def quit(self):
