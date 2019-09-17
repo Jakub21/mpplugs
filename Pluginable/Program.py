@@ -72,6 +72,7 @@ class Program(Logger):
   def quit(self):
     if self.properQuit: return
     self.logNote('Starting quit procedure')
+    self.running = False
     self.properQuit = True
     for key, plugin in self.plugins.items():
       plugin.quit()
