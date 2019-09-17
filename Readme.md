@@ -44,6 +44,11 @@ When loop is broken by user, task, error or interruption, `quit` methods of all 
 #### Executing tasks
 To add task to the task queue call `pushTask` method of the program. You can access the program object in plugins by using `prog` property. Task classes are in `tasks` namespace that also is member of a plugin core. Note that `pushTask` accepts task instances, not classes. Example: `self.prog.pushTask(self.tasks.myTask())`.
 
+#### Program settings
+Pluginable Program class has some settings you can adjust in your `main.py` file. Here is a list of them.
+- `tasksPerTick` - Number of tasks taken from the task queue and executed in every program loop iteration. Defaults to 1.
+- `raiseOnTaskError` - This boolean settings, if enabled, makes program throw an error when there is an exception in a task. Defaults to False.
+
 ### Applications
 Early versions of this software were tested with plugins that used the following packages.
 - `PyGame`
