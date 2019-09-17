@@ -24,7 +24,7 @@ class Program(Logger):
     self.settings[key] = val
 
   def initPlugins(self):
-    self.logNote('Loading plugins')
+    self.logInfo('Loading plugins')
     self.plgLoader.load()
     self.initialized = True
 
@@ -32,7 +32,7 @@ class Program(Logger):
     if not self.initialized:
       self.logError('Please exec program.initPlugins first')
       return
-    self.logNote('Starting program loop')
+    self.logInfo('Starting program')
     self.running = True
     try:
       while self.running:
