@@ -9,3 +9,4 @@ if __name__ == '__main__':
   program.plgLoader.addDirectory('myplugs')
   program.initPlugins()
   program.run()
+  program.quit()

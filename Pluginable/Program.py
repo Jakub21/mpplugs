@@ -13,6 +13,7 @@ class Program(Logger):
     self.plgLoader = PluginLoader(self)
     self.initialized = False
     self.running = False
+    self.properQuit = False
     self.settings = Namespace(
       tasksPerTick = 1,
     )
@@ -66,11 +67,13 @@ class Program(Logger):
     return True
 
   def quit(self):
+    if self.properQuit: return
+    self.logNote('Starting quit procedure')
+    self.properQuit = True
     for key, plugin in self.plugins.items():
       plugin.quit()
+    self.logInfo('Deleting __pycache__ directories')
+    CleanPyCache()
 
   def pushTask(self, task):
     self.taskQueue.push(task)
-
-  def __del__(self):
-    CleanPyCache()
