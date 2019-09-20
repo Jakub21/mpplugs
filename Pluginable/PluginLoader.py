@@ -12,12 +12,15 @@ class PluginLoader(Logger):
     self.directories.append(directory)
 
   def load(self):
+    plugins = []
     for directory in self.directories:
       path = f'./Plugins/{directory}/'
       keys = [d for d in next(walk(path))[1] if not d.startswith('__')]
       for pluginKey in keys:
-        self.loadPlugin(path, pluginKey)
-    for plugin in self.prog.plugins.values():
+        plugin = self.loadPlugin(path, pluginKey)
+        plugins += [plugin]
+        self.prog.plugins[plugin.key] = plugin
+    for plugin in self.orderByDependencies(plugins):
       plugin.init()
 
   def loadPlugin(self, directory, pluginKey):
@@ -54,13 +57,10 @@ class PluginLoader(Logger):
     config = eval('Config')
     helpers = [eval(elm) for elm in elements if elm[0] != elm[0].lower() and \
       elm not in [pluginKey, 'Config'] + preExecLocals]
-    # tasks = [eval(elm) for elm in elements if elm.startswith('_') and \
-    #   elm[1] != elm[1].lower()]
     tasks = []
     for elm in elements:
       if elm.startswith('_') and elm[1] != elm[1].lower():
         tasks += [eval(elm)]
-
     plugin = PluginCls(self.prog)
     plugin.key = PluginCls.__name__
     plugin.cnf = config
@@ -74,5 +74,18 @@ class PluginLoader(Logger):
       task.key = key
       task.plugin = plugin
       plugin.tasks[key] = task
+    return plugin
 
-    self.prog.plugins[pluginKey] = plugin
+  @staticmethod
+  def orderByDependencies(plugins):
+    for iter in range(len(plugins)):
+      for index, plugin in enumerate(plugins):
+        name = plugin.key
+        dependencies = [i for i, p in enumerate(plugins) if p.key in plugin.DEPENDENCIES]
+        try: target = max(dependencies) + 1
+        except ValueError: # no dependencies
+          continue
+        plugins.remove(plugin)
+        plugins.insert(target, plugin)
+        break
+    return plugins
