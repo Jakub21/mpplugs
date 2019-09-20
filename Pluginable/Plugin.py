@@ -16,7 +16,6 @@ class Plugin(Logger):
         raise ValueError(f'Plugin {self.key} depends on {key}')
       if not dependency.INITIALIZED:
         raise ValueError(f'Dependency {dependency.key} must be initialized first')
-    del key
     self.INITIALIZED = True
     self.logDebug(f'Plugin {self.key} inits')
 
