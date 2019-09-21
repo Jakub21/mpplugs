@@ -21,7 +21,12 @@ class PluginLoader(Logger):
         plugins += [plugin]
         self.prog.plugins[plugin.key] = plugin
     for plugin in self.orderByDependencies(plugins):
-      plugin.init()
+      try: plugin.init()
+      except KeyboardInterrupt:
+        raise
+      except:
+        self.logError(f'An error occurred during init of plugin "{plugin.key}"')
+        raise
 
   def loadPlugin(self, directory, pluginKey):
     # Read code files
