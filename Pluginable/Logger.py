@@ -7,11 +7,14 @@ cs.clr = cs.RESET_ALL
 cInit()
 
 class Logger:
-  def __init__(self, file, mode):
+  def __init__(self, id, mode):
     self.logger = Namespace()
-    file = file.replace('\\', '/')
-    self.logger.file = '::'.join(file.split('/')[-2:])[:-3]
-    self.logger.mode = mode
+    self.logger.id = '::'.join(id)
+    self.logger.brackets = {
+      'pluginable': ('{', '}'),
+      'plugin': ('[', ']'),
+      'task': ('(', ')'),
+    }[mode]
 
   def _Time(self, color):
     time = datetime.now()
@@ -24,25 +27,23 @@ class Logger:
     time = f'{hour}:{minute}:{second}'
     return f'[{color}{time}{cs.clr}] '
 
+  def _Log(self, timeColor, idColor, msgColor, *msg):
+    o, c = self.logger.brackets
+    print(end=self._Time(timeColor))
+    print(end=f'{o}{idColor}{self.logger.id}{cs.clr}{c} ')
+    print(f'{msgColor}{" ".join(msg)}{cs.clr}')
+
   def logError(self, *msg):
-    print(end=self._Time(cf.LIGHTRED_EX))
-    print(end=f'[{cf.LIGHTRED_EX}{self.logger.file}{cs.clr}] ')
-    print(f'{cf.LIGHTRED_EX}{" ".join(msg)}{cs.clr}')
+    self._Log(cf.LIGHTRED_EX, cf.LIGHTRED_EX, cf.LIGHTRED_EX, *msg)
 
   def logWarn(self, *msg):
-    print(end=self._Time(cf.LIGHTBLACK_EX))
-    print(end=f'[{cf.LIGHTYELLOW_EX}{self.logger.file}{cs.clr}] ')
-    print(f'{cf.LIGHTYELLOW_EX}{" ".join(msg)}{cs.clr}')
+    self._Log(cf.LIGHTMAGENTA_EX, cf.LIGHTYELLOW_EX, cf.LIGHTYELLOW_EX, *msg)
 
   def logNote(self, *msg):
-    print(end=self._Time(cf.LIGHTBLACK_EX))
-    print(f'[{cf.LIGHTCYAN_EX}{self.logger.file}{cs.clr}] '+' '.join(msg))
+    self._Log(cf.LIGHTMAGENTA_EX, cf.LIGHTCYAN_EX, cf.LIGHTBLACK_EX, *msg)
 
   def logInfo(self, *msg):
-    print(end=self._Time(cf.LIGHTBLACK_EX))
-    print(f'[{self.logger.file}] '+' '.join(msg))
+    self._Log(cf.LIGHTMAGENTA_EX, cf.WHITE, cf.WHITE, *msg)
 
   def logDebug(self, *msg):
-    print(end=self._Time(cf.LIGHTBLACK_EX))
-    print(end=f'[{cf.LIGHTBLACK_EX}{self.logger.file}{cs.clr}] ')
-    print(f'{cf.LIGHTBLACK_EX}{" ".join(msg)}{cs.clr}')
+    self._Log(cf.LIGHTMAGENTA_EX, cf.LIGHTBLACK_EX, cf.LIGHTBLACK_EX, *msg)

@@ -5,7 +5,7 @@ class Plugin(Logger):
   DEPENDENCIES = []
   INITIALIZED = False
   def __init__(self, prog):
-    super().__init__(__file__, 'plugin')
+    super().__init__((self.scope, self.key), 'plugin')
     self.prog = prog
     self.tasks = Namespace()
 

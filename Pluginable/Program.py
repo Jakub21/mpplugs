@@ -7,7 +7,7 @@ from Pluginable.CleanPyCache import CleanPyCache
 
 class Program(Logger):
   def __init__(self):
-    super().__init__(__file__, 'pluginable')
+    super().__init__(('Pluginable', self.__class__.__name__), 'pluginable')
     self.tick = 0
     self.taskQueue = Queue()
     self.plgLoader = PluginLoader(self)

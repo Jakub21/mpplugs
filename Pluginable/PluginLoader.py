@@ -4,7 +4,7 @@ from Pluginable.Namespace import Namespace
 
 class PluginLoader(Logger):
   def __init__(self, prog):
-    super().__init__(__file__, 'pluginable')
+    super().__init__(('Pluginable', self.__class__.__name__), 'pluginable')
     self.prog = prog
     self.directories = []
 
@@ -61,8 +61,9 @@ class PluginLoader(Logger):
     for elm in elements:
       if elm.startswith('_') and elm[1] != elm[1].lower():
         tasks += [eval(elm)]
+    PluginCls.scope = directory.replace('\\','/').split('/')[-2]
+    PluginCls.key = PluginCls.__name__
     plugin = PluginCls(self.prog)
-    plugin.key = PluginCls.__name__
     plugin.cnf = config
     for Helper in helpers:
       name = Helper.__name__
