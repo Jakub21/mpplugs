@@ -32,7 +32,7 @@ class Logger:
     print(end=self._Time(timeColor))
     print(end=f'{o}{idColor}{self.logger.id}{cs.clr}{c} ')
     print(end=msgColor)
-    print(*msg, end=cs.clr)
+    print(*msg, end=f'{cs.clr}\n')
 
   def logError(self, *msg):
     self._Log(cf.LIGHTRED_EX, cf.LIGHTRED_EX, cf.LIGHTRED_EX, *msg)
