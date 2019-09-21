@@ -21,8 +21,14 @@ class Program(Logger):
     self.plugins = Namespace() # filled by loader
 
   def config(self, key, val):
+    '''Change pluginable defined settings'''
     if key not in self.settings.keys():
       raise KeyError('No such setting found')
+    self.settings[key] = val
+
+  def addConfig(self, key, val):
+    '''Add custom settings
+    (in same namespace as pluginable config so beware of overlapping)'''
     self.settings[key] = val
 
   def initPlugins(self):
