@@ -76,7 +76,7 @@ class PluginLoader(Logger):
       plugin.__dict__[name] = Helper()
     for task in tasks:
       key = task.__name__[1:]
-      key = key[0].lower() + key[1:]
+      key = key[0] + key[1:]
       task.key = key
       task.plugin = plugin
       plugin.tasks[key] = task
