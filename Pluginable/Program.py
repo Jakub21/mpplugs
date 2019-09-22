@@ -17,6 +17,7 @@ class Program(Logger):
     self.settings = Namespace(
       tasksPerTick = 1,
       raiseOnTaskError = False,
+      logTasksExecution = True,
     )
     self.plugins = Namespace() # filled by loader
 
