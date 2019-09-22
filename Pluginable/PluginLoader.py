@@ -44,16 +44,16 @@ class PluginLoader(Logger):
 
     # Preparations
     preScopeLocals = list(set(locals().keys()))
-    exec(scopeFile)
-    for file in helperFiles: exec(file)
+    self.tryExec(scopeFile, scope, pluginKey, 'Scope')
+    for file in helperFiles: self.tryExec(file, scope, pluginKey, 'Helper')
     globals().update({k:v for k, v in locals().items() if k not in preScopeLocals})
 
     preExecLocals = list(set(locals().keys()))
 
     # Execute code
-    exec(configFile)
-    exec(pluginFile)
-    for file in taskFiles: exec(file)
+    self.tryExec(configFile, scope, pluginKey, 'Config')
+    self.tryExec(pluginFile, scope, pluginKey, 'Plugin Core')
+    for file in taskFiles: self.tryExec(file, scope, pluginKey, 'Task')
     del file
 
     # Wrap a plugin
@@ -81,6 +81,12 @@ class PluginLoader(Logger):
       task.plugin = plugin
       plugin.tasks[key] = task
     return plugin
+
+  def tryExec(self, file, scope, key, what):
+    try: exec(file)
+    except SyntaxError:
+      self.logError(f'Syntax Error in {scope}::{key} ({what})')
+      raise
 
   @staticmethod
   def orderByDependencies(plugins):
