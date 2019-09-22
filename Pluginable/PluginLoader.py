@@ -29,6 +29,7 @@ class PluginLoader(Logger):
         raise
 
   def loadPlugin(self, directory, pluginKey):
+    scope = directory.replace('\\','/').split('/')[-2]
     # Read code files
     baseDir = f'{directory}{pluginKey}/'
     scopeFile = open(f'{baseDir}Scope.py').read()
@@ -66,7 +67,7 @@ class PluginLoader(Logger):
     for elm in elements:
       if elm.startswith('_') and elm[1] != elm[1].lower():
         tasks += [eval(elm)]
-    PluginCls.scope = directory.replace('\\','/').split('/')[-2]
+    PluginCls.scope = scope
     PluginCls.key = PluginCls.__name__
     plugin = PluginCls(self.prog)
     plugin.cnf = config
