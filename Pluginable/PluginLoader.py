@@ -36,8 +36,8 @@ class PluginLoader(Logger):
     configFile = open(f'{baseDir}Config.py').read()
     pluginFile = open(f'{baseDir}{pluginKey}.py').read()
     helperFiles = [open(f'{baseDir}{location}').read()
-      for location in next(walk(f'{baseDir}'))[2]
-      if location[0] != location[0].lower() and location.endswith('.py')]
+      for location in next(walk(f'{baseDir}'))[2] if location != pluginKey+'.py' and\
+        location[0] != location[0].lower() and location.endswith('.py')]
     taskFiles = [open(f'{baseDir}{location}').read()
       for location in next(walk(f'{baseDir}'))[2]
       if location[1] != location[1].lower() and location.endswith('.py')
