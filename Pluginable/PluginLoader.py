@@ -36,7 +36,8 @@ class PluginLoader(Logger):
     configFile = open(f'{baseDir}Config.py').read()
     pluginFile = open(f'{baseDir}{pluginKey}.py').read()
     helperFiles = [open(f'{baseDir}{location}').read()
-      for location in next(walk(f'{baseDir}'))[2] if location != pluginKey+'.py' and\
+      for location in next(walk(f'{baseDir}'))[2] if \
+        location[:-3] not in ['Scope', 'Config', pluginKey] and
         location[0] != location[0].lower() and location.endswith('.py')]
     taskFiles = [open(f'{baseDir}{location}').read()
       for location in next(walk(f'{baseDir}'))[2]
@@ -72,7 +73,8 @@ class PluginLoader(Logger):
       except SyntaxError:
         self.logError(f'Syntax Error in {scope}::{pluginKey} (Task)')
         raise
-    del file
+    try: del file
+    except UnboundLocalError: pass
 
     # Wrap a plugin
     elements = [k for k in locals().keys() if k not in ['preExecLocals']+preExecLocals]
