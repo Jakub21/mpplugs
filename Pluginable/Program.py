@@ -81,7 +81,8 @@ class Program(Logger):
     self.logNote('Starting quit procedure')
     self.running = False
     self.properQuit = True
-    for key, plugin in self.plugins.items():
+    plugins = [p for k, p in self.plugins.items()]
+    for plugin in self.plgLoader.orderByDependencies(plugins)[::-1]:
       plugin.quit()
     self.logInfo('Deleting __pycache__ directories')
     CleanPyCache()
