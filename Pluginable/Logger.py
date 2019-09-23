@@ -9,12 +9,8 @@ cInit()
 class Logger:
   def __init__(self, id, mode):
     self.logger = Namespace()
-    self.logger.id = '::'.join(id)
-    self.logger.brackets = {
-      'pluginable': ('{', '}'),
-      'plugin': ('[', ']'),
-      'task': ('(', ')'),
-    }[mode]
+    self.logger.id = '.'.join(id)
+    self.logger.mode = { 'pluginable': 'CORE', 'plugin': 'PLUG', 'task': 'TASK'}[mode]
 
   def _Time(self, color):
     time = datetime.now()
@@ -28,9 +24,9 @@ class Logger:
     return f'[{color}{time}{cs.clr}] '
 
   def _Log(self, timeColor, idColor, msgColor, *msg):
-    o, c = self.logger.brackets
+    mode = self.logger.mode
     print(end=self._Time(timeColor))
-    print(end=f'{o}{idColor}{self.logger.id}{cs.clr}{c} ')
+    print(end=f'[{idColor+mode} {idColor}{self.logger.id}{cs.clr}] ')
     print(end=msgColor)
     print(*msg, end=f'{cs.clr}\n')
 
@@ -41,7 +37,7 @@ class Logger:
     self._Log(cf.LIGHTMAGENTA_EX, cf.LIGHTYELLOW_EX, cf.LIGHTYELLOW_EX, *msg)
 
   def logNote(self, *msg):
-    self._Log(cf.LIGHTMAGENTA_EX, cf.LIGHTCYAN_EX, cf.LIGHTBLACK_EX, *msg)
+    self._Log(cf.LIGHTMAGENTA_EX, cf.LIGHTCYAN_EX, cf.WHITE, *msg)
 
   def logInfo(self, *msg):
     self._Log(cf.LIGHTMAGENTA_EX, cf.WHITE, cf.WHITE, *msg)
