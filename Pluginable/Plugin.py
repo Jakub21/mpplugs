@@ -17,13 +17,13 @@ class Plugin(Logger):
       if not dependency.INITIALIZED:
         raise ValueError(f'Dependency {dependency.key} must be initialized first')
     self.INITIALIZED = True
-    self.logDebug(f'Plugin {self.key} inits')
+    self.logInfo(f'Plugin {self.key} inits')
 
   def update(self):
     pass
 
   def quit(self):
-    self.logDebug(f'Plugin {self.key} quits')
+    self.logInfo(f'Plugin {self.key} quits')
 
   def __repr__(self):
     return f'<Plugin {self.key}>'
