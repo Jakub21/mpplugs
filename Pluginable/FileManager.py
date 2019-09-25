@@ -10,3 +10,7 @@ def CleanPyCache(current='.'):
   for subdir in dirs:
     if subdir == CACHE: continue
     CleanPyCache(os.path.join(current, subdir))
+
+def ifnmkdir(d):
+  try: os.mkdir(d)
+  except FileExistsError: pass

@@ -3,7 +3,7 @@ from Pluginable.Queue import Queue
 from Pluginable.PluginLoader import PluginLoader
 from Pluginable.Logger import Logger
 from Pluginable.Namespace import Namespace
-from Pluginable.CleanPyCache import CleanPyCache
+from Pluginable.FileManager import CleanPyCache
 
 class Program(Logger):
   def __init__(self):
