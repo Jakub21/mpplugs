@@ -7,7 +7,6 @@ class Plugin(Logger):
   def __init__(self, prog):
     super().__init__((self.scope, self.key), 'plugin')
     self.prog = prog
-    self.tasks = Namespace()
 
   def init(self):
     for key in self.DEPENDENCIES:

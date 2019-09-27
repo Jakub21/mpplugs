@@ -60,14 +60,18 @@ class PluginLoader(Logger):
     PluginClass = eval(f'plugin.{pluginKey}')
     PluginClass.scope = scopeName
     PluginClass.key = pluginKey
+    instance = PluginClass(self.prog)
 
     PluginClass.tasks = Namespace()
     for k in dir(eval('plugin')):
       if k[0] == '_' and k[1].lower() != k[1]:
-        PluginClass.tasks[k[1:]] = eval(f'plugin.{k}')
+        task = eval(f'plugin.{k}')
+        task.key = k[1:]
+        task.plugin = instance
+        PluginClass.tasks[k[1:]] = task
     PluginClass.cnf = eval('plugin.Config')
 
-    return PluginClass(self.prog)
+    return instance
 
   @staticmethod
   def orderByDependencies(plugins):
