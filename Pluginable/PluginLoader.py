@@ -3,7 +3,6 @@ from Pluginable.Logger import Logger
 from Pluginable.Namespace import Namespace
 from Pluginable.FileManager import ifnmkdir, rmtree
 
-
 class PluginLoader(Logger):
   def __init__(self, prog):
     super().__init__(('Pluginable', self.__class__.__name__), 'pluginable')
@@ -55,14 +54,19 @@ class PluginLoader(Logger):
       f.write(open(file).read())
     f.close()
 
-    exec(f'from {self.target}.{pluginKey} import *')
+    exec(f'import {self.target}.{pluginKey} as plugin')
     rmtree(self.target)
 
-    PluginClass = eval(pluginKey)
+    PluginClass = eval(f'plugin.{pluginKey}')
     PluginClass.scope = scopeName
     PluginClass.key = pluginKey
-    PluginClass.cnf = eval('Config')
-    PluginClass
+
+    PluginClass.tasks = Namespace()
+    for k in dir(eval('plugin')):
+      if k[0] == '_' and k[1].lower() != k[1]:
+        PluginClass.tasks[k[1:]] = eval(f'plugin.{k}')
+    PluginClass.cnf = eval('plugin.Config')
+
     return PluginClass(self.prog)
 
   @staticmethod
