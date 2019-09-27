@@ -10,7 +10,6 @@ class Program(Logger):
     super().__init__(('Pluginable', self.__class__.__name__), 'pluginable')
     self.tick = 0
     self.taskQueue = Queue()
-    self.plgLoader = PluginLoader(self)
     self.loaded = False
     self.initialized = False
     self.running = False
@@ -19,7 +18,9 @@ class Program(Logger):
       tasksPerTick = 1,
       raiseOnTaskError = False,
       logTasksExecution = True,
+      tempPluginsDirectory = '_pluginable',
     )
+    self.plgLoader = PluginLoader(self)
     self.plugins = Namespace() # filled by loader
 
   def config(self, key, val):

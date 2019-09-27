@@ -8,7 +8,7 @@ class PluginLoader(Logger):
     super().__init__(('Pluginable', self.__class__.__name__), 'pluginable')
     self.prog = prog
     self.directories = []
-    self.target = '_pluginable'
+    self.target = self.prog.settings.tempPluginsDirectory
 
   def addDirectory(self, directory):
     self.directories.append(directory)
