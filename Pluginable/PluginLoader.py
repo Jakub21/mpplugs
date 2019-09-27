@@ -22,6 +22,9 @@ class PluginLoader(Logger):
         plugin = self.loadPlugin(path, pluginKey)
         plugins += [plugin]
         self.prog.plugins[plugin.key] = plugin
+
+  def init(self):
+    plugins = list(self.prog.plugins.values())
     for plugin in self.orderByDependencies(plugins):
       try: plugin.init()
       except KeyboardInterrupt:

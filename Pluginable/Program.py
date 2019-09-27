@@ -11,6 +11,7 @@ class Program(Logger):
     self.tick = 0
     self.taskQueue = Queue()
     self.plgLoader = PluginLoader(self)
+    self.loaded = False
     self.initialized = False
     self.running = False
     self.properQuit = False
@@ -32,9 +33,27 @@ class Program(Logger):
     (in same namespace as pluginable config so beware of overlapping)'''
     self.settings[key] = val
 
-  def initPlugins(self):
+  def pluginConfig(self, pluginKey, property, value):
+    if not self.loaded:
+      raise ValueError('Plugins must be loaded before they can be configured')
+    if self.initialized:
+      raise ValueError('Plugins can not be configured after they are initialized')
+    config = self.plugins[pluginKey].cnf
+    cmd = 'config'
+    for key in property.split('.'):
+      cmd += f'.{key}'
+    if type(value) == str: value = f'"{value}"'
+    cmd += f' = {value}'
+    exec(cmd)
+
+  def loadPlugins(self):
     self.logInfo('Loading plugins')
     self.plgLoader.load()
+    self.loaded = True
+
+  def initPlugins(self):
+    self.logInfo('Initializing plugins')
+    self.plgLoader.init()
     self.initialized = True
 
   def run(self):
