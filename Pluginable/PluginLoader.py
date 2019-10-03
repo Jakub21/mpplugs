@@ -1,3 +1,4 @@
+from time import sleep
 from os import walk
 from Pluginable.Logger import Logger
 from Pluginable.Namespace import Namespace
@@ -58,6 +59,8 @@ class PluginLoader(Logger):
     f.close()
 
     exec(f'import {self.target}.{pluginKey} as plugin')
+    if self.prog.settings.slowTempDeletion:
+      sleep(0.1)
     rmtree(self.target)
 
     PluginClass = eval(f'plugin.{pluginKey}')

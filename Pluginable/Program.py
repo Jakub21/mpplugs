@@ -20,6 +20,7 @@ class Program(Logger):
       raiseOnTaskError = False,
       logTasksExecution = True,
       tempPluginsDirectory = '_pluginable',
+      slowTempDeletion = False,
     )
     self.plgLoader = PluginLoader(self)
     self.plugins = Namespace() # filled by loader
