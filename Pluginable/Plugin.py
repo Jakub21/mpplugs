@@ -18,7 +18,7 @@ class Plugin(Logger):
     self.INITIALIZED = True
     self.logInfo(f'Plugin {self.key} inits')
 
-  def update(self):
+  async def update(self):
     pass
 
   def quit(self):

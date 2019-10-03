@@ -1,4 +1,5 @@
 import traceback
+import asyncio
 from Pluginable.Queue import Queue
 from Pluginable.PluginLoader import PluginLoader
 from Pluginable.Logger import Logger
@@ -57,7 +58,7 @@ class Program(Logger):
     self.plgLoader.init()
     self.initialized = True
 
-  def run(self):
+  async def run(self):
     if not self.initialized:
       self.logError('Please exec program.initPlugins first')
       return
@@ -65,21 +66,21 @@ class Program(Logger):
     self.running = True
     try:
       while self.running:
-        self.update()
+        await self.update()
     except KeyboardInterrupt:
       self.logWarn('Keyboard Interrupt')
     self.quit()
 
-  def update(self):
+  async def update(self):
     for x in range(self.settings.tasksPerTick):
       if not self.execLastTask(): break
-    for key, plugin in self.plugins.items():
-      try: plugin.update()
-      except KeyboardInterrupt:
-        raise
-      except:
-        self.logError(f'An error occurred during tick of plugin "{key}"')
-        raise
+    try:
+      await asyncio.gather( \
+        *[plugin.update() for plugin in self.plugins.values()])
+    except KeyboardInterrupt: raise
+    except Exception as err:
+      self.logError(f'An error occurred during tick of a plugin')
+      raise
     self.tick += 1
 
   def execLastTask(self):
