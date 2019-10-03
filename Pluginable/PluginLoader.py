@@ -85,6 +85,7 @@ class PluginLoader(Logger):
         try: target = max(dependencies) + 1
         except ValueError: # no dependencies
           continue
+        if index >= target: continue
         plugins.remove(plugin)
         plugins.insert(target, plugin)
         break
