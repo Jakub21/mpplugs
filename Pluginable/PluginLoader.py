@@ -9,10 +9,14 @@ class PluginLoader(Logger):
     super().__init__(('Pluginable', self.__class__.__name__), 'pluginable')
     self.prog = prog
     self.directories = []
+    self.pluginsToSkip = []
     self.target = self.prog.settings.tempPluginsDirectory
 
   def addDirectory(self, directory):
     self.directories.append(directory)
+
+  def skipPlugins(self, *keys):
+    self.pluginsToSkip += keys
 
   def load(self):
     plugins = []
@@ -20,6 +24,7 @@ class PluginLoader(Logger):
       path = f'./Plugins/{directory}/'
       keys = [d for d in next(walk(path))[1] if not d.startswith('__')]
       for pluginKey in keys:
+        if pluginKey in self.pluginsToSkip: continue
         plugin = self.loadPlugin(path, pluginKey)
         plugins += [plugin]
         self.prog.plugins[plugin.key] = plugin
