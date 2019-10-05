@@ -52,6 +52,8 @@ class Program(Logger):
   def loadPlugins(self):
     self.logInfo('Loading plugins')
     self.plgLoader.load()
+    self.logInfo('Deleting __pycache__ directories')
+    CleanPyCache()
     self.loaded = True
 
   def initPlugins(self):
@@ -106,8 +108,6 @@ class Program(Logger):
     plugins = [p for k, p in self.plugins.items()]
     for plugin in self.plgLoader.orderByDependencies(plugins)[::-1]:
       plugin.quit()
-    self.logInfo('Deleting __pycache__ directories')
-    CleanPyCache()
 
   def pushTask(self, task):
     self.taskQueue.push(task)
