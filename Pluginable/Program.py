@@ -41,11 +41,19 @@ class Program(Logger):
       raise ValueError('Plugins must be loaded before they can be configured')
     if self.initialized:
       raise ValueError('Plugins can not be configured after they are initialized')
-    config = self.plugins[pluginKey].cnf
+    try: config = self.plugins[pluginKey].cnf
+    except KeyError:
+      self.logError('Tried to configure plugin that does not exist')
+      raise
     cmd = 'config'
     for key in property.split('.'):
       cmd += f'.{key}'
     if type(value) == str: value = f'"{value}"'
+    try: eval(cmd)
+    except:
+      path = '.'.join([pluginKey]+cmd.split('.')[1:])
+      self.logWarn(f'Could not configure plugin, key "{path}" does not exist')
+      return
     cmd += f' = {value}'
     exec(cmd)
 
