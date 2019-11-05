@@ -30,6 +30,7 @@ class Program(Logger):
     )
     self.plgLoader = PluginLoader(self)
     self.evntHandlers = {}
+    self.noEvtHandlerWarns = []
     self.phase = 'instance'
 
   def config(self, **kwargs):
@@ -75,7 +76,13 @@ class Program(Logger):
       self.cmndHandlers[command.what](**command.getArgs())
     while not self.evntQueue.empty():
       event = self.evntQueue.get()
-      for pluginKey in self.evntHandlers[event.key]:
+      try: handlers = self.evntHandlers[event.key]
+      except KeyError:
+        if event.key not in self.noEvtHandlerWarns:
+          self.logWarn(f'Event "{event.key}" has no handlers assigned')
+          self.noEvtHandlerWarns.append(event.key)
+        continue
+      for pluginKey in handlers:
         self.plugins[pluginKey].queue.put(Command('evnt', event=event))
     taskIndex = 0
     while not self.taskQueue.empty() and taskIndex < self.settings.tasksPerTick:
