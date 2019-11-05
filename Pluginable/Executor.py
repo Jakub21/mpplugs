@@ -1,19 +1,18 @@
 import multiprocessing as mpr
 from Pluginable.Logger import Logger
 from Pluginable.Namespace import Namespace
-from Pluginable.Command import Command
+from Pluginable.Event import Event
 
 class Executor(Logger):
-  def __init__(self, plugin, forceQuit, plgnQueue, cmndQueue, evntQueue, logLock):
+  def __init__(self, plugin, forceQuit, plgnQueue, evntQueue, logLock):
     super().__init__((f'{plugin.scope}.{plugin.key}', 'Executor'), 'plugin', logLock)
     self.quitting = False
     self.plugin = plugin
     self.forceQuit = forceQuit
     self.plgnQueue = plgnQueue
-    self.cmndQueue = cmndQueue
     self.evntQueue = evntQueue
     self.plugin.executor = self
-    self.cmndHandlers = Namespace(
+    self.evntHandlers = Namespace(
       cnfg = self.configure,
       tick = self.tickPlugin,
       evnt = self.handleEvent,
@@ -30,17 +29,17 @@ class Executor(Logger):
       if forceQuit: break
       incoming = []
       while not self.plgnQueue.empty():
-        try: command = self.plgnQueue.get()
+        try: event = self.plgnQueue.get()
         except BrokenPipeError: break
-        try: self.cmndHandlers[command.what](**command.getArgs())
+        try: self.evntHandlers[event.what](**event.getArgs())
         except:
           self.quitting = True
           raise
 
-  def sendQuit(self):
-    self.cmndQueue.put(Command('quit'))
+  def quitProgram(self):
+    self.evntQueue.put(Event('quit'))
 
-  # Command handlers
+  # Internal event handlers
 
   def configure(self, data):
     for path, value in data.items():
@@ -54,7 +53,7 @@ class Executor(Logger):
     try: self.plugin.update()
     except Exception as exc:
       self.logError(f'Error during tick in plugin {self.plugin.key}')
-      self.cmndQueue.put(Command('error', exception=exc,
+      self.cmndQueue.put(Event('error', exception=exc,
         key=self.plugin.key, type='tick'))
       raise
 
@@ -69,7 +68,7 @@ class Executor(Logger):
 
   def addEvtHandler(self, key, method):
     self.evntHandlers[key] = method
-    self.cmndQueue.put(Command('addEvtHandler', key=key, plugin=self.plugin.key))
+    self.cmndQueue.put(Event('addEvtHandler', key=key, plugin=self.plugin.key))
 
   def pushEvnt(self, event):
     self.evntQueue.put(event)
@@ -78,9 +77,9 @@ class Executor(Logger):
     self.taskQueue.put(task)
 
 
-def runPlugin(plugin, forceQuit, plgnQueue, cmndQueue, evntQueue, logLock):
-  executor = Executor(plugin, forceQuit, plgnQueue, cmndQueue, evntQueue, logLock)
+def runPlugin(plugin, forceQuit, plgnQueue, evntQueue, logLock):
+  executor = Executor(plugin, forceQuit, plgnQueue, evntQueue, logLock)
   try: executor.updateLoop()
   except EOFError: pass
   except KeyboardInterrupt:
-    executor.sendQuit()
+    executor.quitProgram()

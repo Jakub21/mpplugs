@@ -1,5 +1,4 @@
 from Pluginable.Namespace import Namespace
-from Pluginable.Command import Command
 from Pluginable.Logger import Logger
 from Pluginable.PluginLoader import PluginLoader
 from Pluginable.FileManager import CleanPyCache
@@ -23,11 +22,9 @@ class Program(Logger):
       loaderDirectories = [],
       loaderOmit = [],
     )
-    self.cmndHandlers = Namespace(
-      addEvtHandler = self.addEvtHandler,
-      error = self.onError,
-      quit = self.quit,
-    )
+    self.addEvtHandler('addEvtHandler', self.addEvtHandler)
+    self.addEvtHandler('error', self.onError)
+    self.addEvtHandler('quit', self.quit)
     self.plgLoader = PluginLoader(self)
     self.evntHandlers = {}
     self.noEvtHandlerWarns = []
@@ -70,20 +67,19 @@ class Program(Logger):
     for plugin in self.plugins.values():
       try: queue = plugin.queue
       except AttributeError: continue
-      plugin.queue.put(Command('tick'))
-    while not self.cmndQueue.empty():
-      command = self.cmndQueue.get()
-      self.cmndHandlers[command.what](**command.getArgs())
+      plugin.queue.put(Event('tick'))
     while not self.evntQueue.empty():
       event = self.evntQueue.get()
-      try: handlers = self.evntHandlers[event.key]
+      try: hndPlugins = self.evntHandlers[event.key]
       except KeyError:
         if event.key not in self.noEvtHandlerWarns:
           self.logWarn(f'Event "{event.key}" has no handlers assigned')
           self.noEvtHandlerWarns.append(event.key)
         continue
-      for pluginKey in handlers:
-        self.plugins[pluginKey].queue.put(Command('evnt', event=event))
+      for handler in hndPlugins:
+        if callable(handler): handler() # Execute internal handler
+        else: # Send event to all plugin executors with handlers
+          self.plugins[handler].queue.put(Event('evnt', event=event))
     taskIndex = 0
     while not self.taskQueue.empty() and taskIndex < self.settings.tasksPerTick:
       task = self.taskQueue.get()
@@ -97,7 +93,7 @@ class Program(Logger):
     self.logNote('Starting standard quit procedure')
     for plugin in self.plugins.values():
       if self.phase == 'exception': plugin.forceQuit = True
-      else: plugin.queue.put(Command('quit'))
+      else: plugin.queue.put(Event('quit'))
     sleep(0.3)
     for key, plugin in self.plugins.items(): plugin.proc.join()
     self.quitting = True

@@ -71,7 +71,7 @@ class PluginLoader(Logger):
     queue = self.prog.manager.Queue()
     forceQuit = self.prog.manager.Value('i', 0)
     proc = mpr.Process(target=runPlugin, args=[instance, forceQuit, queue,
-      self.prog.cmndQueue, self.prog.evntQueue, self.prog.logLock])
+      self.prog.evntQueue, self.prog.logLock])
     proc.start()
     return Namespace(key=pluginKey, proc=proc, queue=queue, forceQuit=forceQuit)
 
