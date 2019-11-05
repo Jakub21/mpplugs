@@ -18,7 +18,6 @@ class Executor(Logger):
       evnt = self.handleEvent,
       quit = self.quit
     )
-    self.evntHandlers = Namespace()
     self.logInfo(f'Initializing plugin {plugin.key}')
     self.plugin.init()
 
