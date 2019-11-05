@@ -2,7 +2,7 @@ from argparse import ArgumentParser as Parser
 from _scriptUtils import *
 
 class data:
-  task = '''# Task {plugin}::{task}
+  task = '''
 class {task}(Task):
   def execute(self):
     super().execute()

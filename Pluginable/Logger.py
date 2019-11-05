@@ -7,8 +7,9 @@ cs.clr = cs.RESET_ALL
 cInit()
 
 class Logger:
-  def __init__(self, id, mode):
+  def __init__(self, id, mode, lock):
     self.logger = Namespace()
+    self.logger.lock = lock
     self.logger.id = '.'.join(id)
     self.logger.mode = { 'pluginable': 'CORE', 'plugin': 'PLUG', 'task': 'TASK'}[mode]
 
@@ -24,11 +25,11 @@ class Logger:
     return f'[{color}{time}{cs.clr}] '
 
   def _Log(self, timeColor, idColor, msgColor, *msg):
+    self.logger.lock.acquire()
     mode = self.logger.mode
-    print(end=self._Time(timeColor))
-    print(end=f'[{idColor+mode} {idColor}{self.logger.id}{cs.clr}] ')
-    print(end=msgColor)
-    print(*msg, end=f'{cs.clr}\n')
+    msg = ' '.join([str(m) for m in msg])
+    print(self._Time(timeColor)+f'[{idColor+mode} {idColor}{self.logger.id}{cs.clr}] '+msgColor+msg+f'{cs.clr}')
+    self.logger.lock.release()
 
   def logError(self, *msg):
     self._Log(cf.LIGHTRED_EX, cf.LIGHTRED_EX, cf.LIGHTRED_EX, *msg)

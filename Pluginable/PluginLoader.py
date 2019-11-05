@@ -1,43 +1,34 @@
+import multiprocessing as mpr
 from time import sleep
 from os import walk
+from Pluginable.Executor import runPlugin
 from Pluginable.Logger import Logger
 from Pluginable.Namespace import Namespace
 from Pluginable.FileManager import ifnmkdir, rmtree
 
 class PluginLoader(Logger):
   def __init__(self, prog):
-    super().__init__(('Pluginable', self.__class__.__name__), 'pluginable')
+    super().__init__(('Pluginable', 'PluginLoader'), 'pluginable', prog.logLock)
     self.prog = prog
     self.directories = []
-    self.pluginsToSkip = []
-    self.target = self.prog.settings.tempPluginsDirectory
-
-  def addDirectory(self, directory):
-    self.directories.append(directory)
-
-  def skipPlugins(self, *keys):
-    self.pluginsToSkip += keys
+    self.pluginsToOmit = []
+    self.target = ''
 
   def load(self):
+    self.directories = self.prog.settings.loaderDirectories
+    self.pluginsToOmit = self.prog.settings.loaderOmit
+    self.target = self.prog.settings.loaderTemp
     plugins = []
+    self.logNote(f'List of directories: {self.directories}')
     for directory in self.directories:
       path = f'./Plugins/{directory}/'
       keys = [d for d in next(walk(path))[1] if not d.startswith('__')]
       for pluginKey in keys:
-        if pluginKey in self.pluginsToSkip: continue
+        self.logNote(f'Loading plugin "{pluginKey}"')
+        if pluginKey in self.pluginsToOmit: continue
         plugin = self.loadPlugin(path, pluginKey)
         plugins += [plugin]
         self.prog.plugins[plugin.key] = plugin
-
-  def init(self):
-    plugins = list(self.prog.plugins.values())
-    for plugin in self.orderByDependencies(plugins):
-      try: plugin.init()
-      except KeyboardInterrupt:
-        raise
-      except:
-        self.logError(f'An error occurred during init of plugin "{plugin.key}"')
-        raise
 
   def loadPlugin(self, directory, pluginKey):
     scopeName = directory.replace('\\','/').split('/')[-2]
@@ -64,37 +55,26 @@ class PluginLoader(Logger):
     f.close()
 
     exec(f'import {self.target}.{pluginKey} as plugin')
-    if self.prog.settings.slowTempDeletion:
-      sleep(0.1)
-    rmtree(self.target)
 
     PluginClass = eval(f'plugin.{pluginKey}')
-    PluginClass.scope = scopeName
-    PluginClass.key = pluginKey
-    instance = PluginClass(self.prog)
+    instance = PluginClass(scopeName, pluginKey, self.prog.logLock)
 
-    PluginClass.tasks = Namespace()
+    instance.tasks = Namespace()
     for k in dir(eval('plugin')):
       if k[0] == '_' and k[1].lower() != k[1]:
         task = eval(f'plugin.{k}')
         task.key = k[1:]
         task.plugin = instance
-        PluginClass.tasks[k[1:]] = task
-    PluginClass.cnf = eval('plugin.Config')
+        instance.tasks[k[1:]] = task
+    instance.cnf = eval('plugin.Config')
 
-    return instance
+    queue = self.prog.manager.Queue()
+    forceQuit = self.prog.manager.Value('i', 0)
+    proc = mpr.Process(target=runPlugin, args=[instance, forceQuit, queue,
+      self.prog.cmndQueue, self.prog.evntQueue, self.prog.logLock])
+    proc.start()
+    return Namespace(key=pluginKey, proc=proc, queue=queue, forceQuit=forceQuit)
 
-  @staticmethod
-  def orderByDependencies(plugins):
-    for iter in range(len(plugins)):
-      for index, plugin in enumerate(plugins):
-        name = plugin.key
-        dependencies = [i for i, p in enumerate(plugins) if p.key in plugin.DEPENDENCIES]
-        try: target = max(dependencies) + 1
-        except ValueError: # no dependencies
-          continue
-        if index >= target: continue
-        plugins.remove(plugin)
-        plugins.insert(target, plugin)
-        break
-    return plugins
+  def removeTemp(self):
+    try: rmtree(self.target)
+    except FileNotFoundError: pass

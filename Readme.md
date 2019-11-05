@@ -3,6 +3,9 @@ Pluginable is a framework for Python applications with text or graphical user in
 
 Pluginable helps to create modular applications with setup + loop idea common for example in microcomputer or GUI programming.
 
+### Stable version
+Latest stable version was released as v0.2 "Asynchronous". If you wish to use Pluginable download this version. Contents of master branch are not tested and are full of bugs.
+
 
 ### Applications
 Early versions of this software were tested with plugins that used the following packages.

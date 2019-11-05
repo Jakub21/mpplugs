@@ -2,21 +2,20 @@ from argparse import ArgumentParser as Parser
 from _scriptUtils import *
 
 class data:
-  scope = '''# Those variables are available in plugin, tasks and helper classes
-from Pluginable import Plugin
-from Pluginable import Task
+  scope = '''
+from Pluginable import Plugin, Task, Event
 '''
-  config = '''# This class is available in program as plugin.cnf
+  config = '''
 class Config:
   pass
 '''
-  main = '''# Main class of {plugin} plugin
+  main = '''
 class {plugin}(Plugin):
   def init(self):
     super().init()
 
   def update(self):
-    pass
+    super().update()
 
   def quit(self):
     super().quit()

@@ -1,121 +1,109 @@
-import traceback
-import asyncio
-from Pluginable.Queue import Queue
-from Pluginable.PluginLoader import PluginLoader
-from Pluginable.Logger import Logger
 from Pluginable.Namespace import Namespace
+from Pluginable.Command import Command
+from Pluginable.Logger import Logger
+from Pluginable.PluginLoader import PluginLoader
 from Pluginable.FileManager import CleanPyCache
+import multiprocessing as mpr
+from time import sleep
 
 class Program(Logger):
   def __init__(self):
-    super().__init__(('Pluginable', self.__class__.__name__), 'pluginable')
+    self.manager = mpr.Manager()
+    self.logLock = self.manager.Lock()
+    super().__init__(('Pluginable', 'Program'), 'pluginable', self.logLock)
+    self.quitting = False
     self.tick = 0
-    self.taskQueue = Queue()
-    self.loaded = False
-    self.initialized = False
-    self.running = False
-    self.properQuit = False
+    self.cmndQueue = self.manager.Queue()
+    self.evntQueue = self.manager.Queue()
+    self.taskQueue = self.manager.Queue()
+    self.plugins = Namespace()
     self.settings = Namespace(
-      tasksPerTick = 1,
-      raiseOnTaskError = False,
-      logTasksExecution = True,
-      tempPluginsDirectory = '_pluginable',
-      slowTempDeletion = False,
+      tasksPerTick = 3,
+      loaderTemp = 'tempPlugins',
+      loaderDirectories = [],
+      loaderOmit = [],
+    )
+    self.cmndHandlers = Namespace(
+      addEvtHandler = self.addEvtHandler,
+      error = self.onError,
+      quit = self.quit,
     )
     self.plgLoader = PluginLoader(self)
-    self.plugins = Namespace() # filled by loader
+    self.evntHandlers = {}
+    self.phase = 'instance'
 
-  def config(self, key, val):
-    '''Change pluginable defined settings'''
-    if key not in self.settings.keys():
-      raise KeyError('No such setting found')
-    self.settings[key] = val
+  def config(self, **kwargs):
+    for key, val in kwargs.items():
+      if key not in self.settings.keys():
+        self.logWarn(f'Settings key "{key}" was not found')
+        continue
+      self.settings[key] = val
 
-  def addConfig(self, key, val):
-    '''Add custom settings
-    (in same namespace as pluginable config so beware of overlapping)'''
-    self.settings[key] = val
+  def configPlugin(self, pluginKey, kwargs):
+    for key, value in kwargs.items():
+      exec(f'self.plugins.{pluginKey}.cnf.{key} = {value}')
 
-  def pluginConfig(self, pluginKey, property, value):
-    if not self.loaded:
-      raise ValueError('Plugins must be loaded before they can be configured')
-    if self.initialized:
-      raise ValueError('Plugins can not be configured after they are initialized')
-    try: config = self.plugins[pluginKey].cnf
-    except KeyError:
-      self.logError('Tried to configure plugin that does not exist')
-      raise
-    cmd = 'config'
-    for key in property.split('.'):
-      cmd += f'.{key}'
-    if type(value) == str: value = f'"{value}"'
-    try: eval(cmd)
-    except:
-      path = '.'.join([pluginKey]+cmd.split('.')[1:])
-      self.logWarn(f'Could not configure plugin, key "{path}" does not exist')
-      return
-    cmd += f' = {value}'
-    exec(cmd)
+  def preload(self):
+    self.logInfo('Preloading plugins')
+    try: self.plgLoader.load()
+    except StopIteration:
+      self.logError('Can not load plugins, directory does not exist')
+      exit()
+    finally:
+      pass
+      self.logInfo('Deleting __pycache__ directories')
+      CleanPyCache()
+    sleep(0.25)
+    self.phase = 'preloaded'
 
-  def loadPlugins(self):
-    self.logInfo('Loading plugins')
-    self.plgLoader.load()
-    self.logInfo('Deleting __pycache__ directories')
-    CleanPyCache()
-    self.loaded = True
-
-  def initPlugins(self):
-    self.logInfo('Initializing plugins')
-    self.plgLoader.init()
-    self.initialized = True
-
-  async def run(self):
-    if not self.initialized:
-      self.logError('Please exec program.initPlugins first')
-      return
-    self.logInfo('Starting program')
-    self.running = True
-    try:
-      while self.running:
-        await self.update()
-    except KeyboardInterrupt:
-      self.logWarn('Keyboard Interrupt')
+  def run(self):
+    self.logInfo('Starting')
+    self.phase = 'running'
+    while not self.quitting:
+      try: self.update()
+      except KeyboardInterrupt: break
+      except: self.phase = 'exception'; raise
     self.quit()
 
-  async def update(self):
-    for x in range(self.settings.tasksPerTick):
-      if not self.execLastTask(): break
-    try:
-      await asyncio.gather( \
-        *[plugin.update() for plugin in self.plugins.values()])
-    except KeyboardInterrupt: raise
-    except Exception as err:
-      self.logError(f'An error occurred during tick of a plugin')
-      raise
-    self.tick += 1
-
-  def execLastTask(self):
-    try: task = self.taskQueue.pop()
-    except IndexError: return False
-    try: task.execute()
-    except KeyboardInterrupt:
-      raise
-    except:
-      trbk = traceback.format_exc()
-      msg = 'An error occurred during execution of task'
-      self.logError(f'{msg} "{task.plugin.key}.{task.key}"\n{trbk}')
-      if self.settings.raiseOnTaskError:
-        raise
-    return True
+  def update(self):
+    for plugin in self.plugins.values():
+      try: queue = plugin.queue
+      except AttributeError: continue
+      plugin.queue.put(Command('tick'))
+    while not self.cmndQueue.empty():
+      command = self.cmndQueue.get()
+      self.cmndHandlers[command.what](**command.getArgs())
+    while not self.evntQueue.empty():
+      event = self.evntQueue.get()
+      for pluginKey in self.evntHandlers[event.key]:
+        self.plugins[pluginKey].queue.put(Command('evnt', event=event))
+    taskIndex = 0
+    while not self.taskQueue.empty() and taskIndex < self.settings.tasksPerTick:
+      task = self.taskQueue.get()
+      pluginCmd = task.execute()
+      self.plugins[task.pluginKey].queue.put(pluginCmd)
+      taskIndex += 1
 
   def quit(self):
-    if self.properQuit: return
-    self.logNote('Starting quit procedure')
-    self.running = False
-    self.properQuit = True
-    plugins = [p for k, p in self.plugins.items()]
-    for plugin in self.plgLoader.orderByDependencies(plugins)[::-1]:
-      plugin.quit()
+    if self.phase == 'quitting': return
+    self.phase = 'quitting'
+    self.logNote('Starting standard quit procedure')
+    for plugin in self.plugins.values():
+      if self.phase == 'exception': plugin.forceQuit = True
+      else: plugin.queue.put(Command('quit'))
+    sleep(0.3)
+    for key, plugin in self.plugins.items(): plugin.proc.join()
+    self.quitting = True
+    self.logNote('Done')
+    self.plgLoader.removeTemp()
 
-  def pushTask(self, task):
-    self.taskQueue.push(task)
+  # Methods called by plugins
+
+  def addEvtHandler(self, key, plugin):
+    try: self.evntHandlers[key] += [plugin]
+    except KeyError: self.evntHandlers[key] = [plugin]
+
+  def onError(self, key, type, exception):
+    self.phase = 'exception'
+    self.exception = Namespace(key=key, type=type, exception=exception)
+    exit()
