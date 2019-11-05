@@ -25,7 +25,8 @@ class Executor(Logger):
 
   def updateLoop(self):
     while not self.quitting:
-      forceQuit = self.forceQuit.value
+      try: forceQuit = self.forceQuit.value
+      except FileNotFoundError: return
       if forceQuit: break
       incoming = []
       while not self.plgnQueue.empty():

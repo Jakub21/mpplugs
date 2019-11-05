@@ -28,7 +28,7 @@ class Logger:
     try: self.logger.lock.acquire()
     except FileNotFoundError: return
     text = self._Time(timeColor) + '[' + idColor + self.logger.mode + ' ' + idColor + \
-      self.logger.id + cs.clr + ']' + msgColor + ' '.join([str(m) for m in msg]) + cs.clr
+      self.logger.id + cs.clr + '] ' + msgColor + ' '.join([str(m) for m in msg]) + cs.clr
     print(text)
     self.logger.lock.release()
 
