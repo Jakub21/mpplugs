@@ -1,5 +1,6 @@
 from Pluginable.Namespace import Namespace
 from Pluginable.Logger import Logger
+from Pluginable.Event import Event
 from Pluginable.PluginLoader import PluginLoader
 from Pluginable.FileManager import CleanPyCache
 import multiprocessing as mpr
@@ -22,12 +23,13 @@ class Program(Logger):
       loaderDirectories = [],
       loaderOmit = [],
     )
-    self.addEvtHandler('addEvtHandler', self.addEvtHandler)
-    self.addEvtHandler('error', self.onError)
-    self.addEvtHandler('quit', self.quit)
-    self.plgLoader = PluginLoader(self)
-    self.evntHandlers = {}
+    self.evntHandlers = {
+      'addEvtHandler': [self.addEvtHandler],
+      'error': [self.onError],
+      'quit': [self.quit],
+    }
     self.noEvtHandlerWarns = []
+    self.plgLoader = PluginLoader(self)
     self.phase = 'instance'
 
   def config(self, **kwargs):
@@ -77,7 +79,7 @@ class Program(Logger):
           self.noEvtHandlerWarns.append(event.key)
         continue
       for handler in hndPlugins:
-        if callable(handler): handler() # Execute internal handler
+        if callable(handler): handler(event) # Execute internal handler
         else: # Send event to all plugin executors with handlers
           self.plugins[handler].queue.put(Event('evnt', event=event))
     taskIndex = 0
@@ -87,7 +89,7 @@ class Program(Logger):
       self.plugins[task.pluginKey].queue.put(pluginCmd)
       taskIndex += 1
 
-  def quit(self):
+  def quit(self, event=None):
     if self.phase == 'quitting': return
     self.phase = 'quitting'
     self.logNote('Starting standard quit procedure')
@@ -100,13 +102,13 @@ class Program(Logger):
     self.logNote('Done')
     self.plgLoader.removeTemp()
 
-  # Methods called by plugins
+  # Methods called by plugins' executors
 
-  def addEvtHandler(self, key, plugin):
-    try: self.evntHandlers[key] += [plugin]
-    except KeyError: self.evntHandlers[key] = [plugin]
+  def addEvtHandler(self, event):
+    try: self.evntHandlers[event.evtkey] += [event.plugin]
+    except KeyError: self.evntHandlers[event.evtkey] = [event.plugin]
 
-  def onError(self, key, type, exception):
+  def onError(self, event):
     self.phase = 'exception'
-    self.exception = Namespace(key=key, type=type, exception=exception)
+    self.exception = event
     exit()

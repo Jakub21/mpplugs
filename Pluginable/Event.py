@@ -1,9 +1,7 @@
-from datetime import datetime
 
 class Event:
   def __init__(self, key, **data):
     self.key = key
-    self.when = datetime.now()
     self.__dict__.update(data)
 
   def getArgs(self):

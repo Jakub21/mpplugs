@@ -29,10 +29,13 @@ class Executor(Logger):
       if forceQuit: break
       incoming = []
       while not self.plgnQueue.empty():
-        try: event = self.plgnQueue.get()
-        except BrokenPipeError: break
-        try: self.evntHandlers[event.what](**event.getArgs())
+        event = self.plgnQueue.get()
+        try: handler = self.evntHandlers[event.key]
+        except KeyError:
+          self.logWarn(f'Error: No internal handler')
+        try: handler(event)
         except:
+          self.logError(f'An error occurred during handling event "{event.key}"')
           self.quitting = True
           raise
 
@@ -41,26 +44,26 @@ class Executor(Logger):
 
   # Internal event handlers
 
-  def configure(self, data):
-    for path, value in data.items():
+  def configure(self, event):
+    for path, value in event.items():
       try: eval(f'self.plugin.cnf.{path}')
       except AttributeError:
         self.logWarn(f'Config error in {self.plugin.key}: path {path} does not exist')
       if type(value) == str: value = f'"{value}"'
       exec(f'self.plugin.cnf.{path} = {value}')
 
-  def tickPlugin(self):
+  def tickPlugin(self, event):
     try: self.plugin.update()
     except Exception as exc:
       self.logError(f'Error during tick in plugin {self.plugin.key}')
       self.cmndQueue.put(Event('error', exception=exc,
-        key=self.plugin.key, type='tick'))
+        source=self.plugin.key, type='tick'))
       raise
 
   def handleEvent(self, event):
     self.evntHandlers[event.key](event)
 
-  def quit(self):
+  def quit(self, event=None):
     self.quitting = True
     self.plugin.quit()
 
@@ -68,7 +71,7 @@ class Executor(Logger):
 
   def addEvtHandler(self, key, method):
     self.evntHandlers[key] = method
-    self.cmndQueue.put(Event('addEvtHandler', key=key, plugin=self.plugin.key))
+    self.evntQueue.put(Event('addEvtHandler', evtkey=key, plugin=self.plugin.key))
 
   def pushEvnt(self, event):
     self.evntQueue.put(event)
@@ -80,6 +83,6 @@ class Executor(Logger):
 def runPlugin(plugin, forceQuit, plgnQueue, evntQueue, logLock):
   executor = Executor(plugin, forceQuit, plgnQueue, evntQueue, logLock)
   try: executor.updateLoop()
-  except EOFError: pass
+  except (EOFError, BrokenPipeError): pass
   except KeyboardInterrupt:
     executor.quitProgram()
