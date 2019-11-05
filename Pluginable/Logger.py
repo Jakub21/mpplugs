@@ -25,10 +25,11 @@ class Logger:
     return f'[{color}{time}{cs.clr}] '
 
   def _Log(self, timeColor, idColor, msgColor, *msg):
-    self.logger.lock.acquire()
-    mode = self.logger.mode
-    msg = ' '.join([str(m) for m in msg])
-    print(self._Time(timeColor)+f'[{idColor+mode} {idColor}{self.logger.id}{cs.clr}] '+msgColor+msg+f'{cs.clr}')
+    try: self.logger.lock.acquire()
+    except FileNotFoundError: return
+    text = self._Time(timeColor) + '[' + idColor + self.logger.mode + ' ' + idColor + \
+      self.logger.id + cs.clr + ']' + msgColor + ' '.join([str(m) for m in msg]) + cs.clr
+    print(text)
     self.logger.lock.release()
 
   def logError(self, *msg):
