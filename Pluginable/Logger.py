@@ -1,5 +1,6 @@
 from datetime import datetime
 from Pluginable.Namespace import Namespace
+from Pluginable.Settings import Settings
 
 from colorama import init as cInit, Fore as cf
 from colorama import Style as cs
@@ -10,25 +11,20 @@ class Logger:
   def __init__(self, id, mode, lock):
     self.logger = Namespace()
     self.logger.lock = lock
-    self.logger.id = '.'.join(id)
-    self.logger.mode = { 'pluginable': 'CORE', 'plugin': 'PLUG', 'task': 'TASK'}[mode]
+    self.logger.id = id
+    self.logger.mode = { 'pluginable': 'Kernel', 'plugin': 'Plugin'}[mode]
 
   def _Time(self, color):
-    time = datetime.now()
-    hour = str(time.hour)
-    if len(hour) <2: hour = f'0{hour}'
-    minute = str(time.minute)
-    if len(minute) <2: minute = f'0{minute}'
-    second = str(time.second)
-    if len(second) <2: second = f'0{second}'
-    time = f'{hour}:{minute}:{second}'
-    return f'[{color}{time}{cs.clr}] '
+    # TODO: In new logger include time relative to start of the program
+    fs = '%p %I:%M:%S' if Settings.Logger.timeFormat == '12h' else '%H:%M:%S'
+    return f'{color}@{datetime.now().strftime(fs)}{cs.clr} '
 
   def _Log(self, timeColor, idColor, msgColor, *msg):
     try: self.logger.lock.acquire()
     except FileNotFoundError: return
-    text = self._Time(timeColor) + '[' + idColor + self.logger.mode + ' ' + idColor + \
-      self.logger.id + cs.clr + '] ' + msgColor + ' '.join([str(m) for m in msg]) + cs.clr
+    text = self._Time(timeColor) + idColor
+    text += f'<{self.logger.mode}::{self.logger.id}> '
+    text += cs.clr + msgColor + ' '.join([str(m) for m in msg]) + cs.clr
     print(text)
     self.logger.lock.release()
 

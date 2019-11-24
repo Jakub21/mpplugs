@@ -1,11 +1,12 @@
 import multiprocessing as mpr
+from traceback import format_tb
 from Pluginable.Logger import Logger
 from Pluginable.Namespace import Namespace
-from Pluginable.Event import Event
+from Pluginable.Event import ExecutorEvent
 
 class Executor(Logger):
   def __init__(self, plugin, forceQuit, plgnQueue, evntQueue, logLock):
-    super().__init__((f'{plugin.scope}.{plugin.key}', 'Executor'), 'plugin', logLock)
+    super().__init__(plugin.key, 'plugin', logLock)
     self.quitting = False
     self.plugin = plugin
     self.forceQuit = forceQuit
@@ -18,7 +19,12 @@ class Executor(Logger):
       evnt = self.handleEvent,
       quit = self.quit
     )
-    self.logInfo(f'Initializing plugin {plugin.key}')
+    self.errorMsgs = Namespace(
+      cnfg = f'Plugin configuration error ({plugin.key})',
+      tick = f'Plugin tick error ({plugin.key})',
+      quit = f'Plugin cleanup error ({plugin.key})',
+    )
+    self.logInfo(f'Starting plugin init')
     self.plugin.init()
 
   def updateLoop(self):
@@ -29,17 +35,20 @@ class Executor(Logger):
       incoming = []
       while not self.plgnQueue.empty():
         event = self.plgnQueue.get()
-        try: handler = self.evntHandlers[event.key]
+        try: handler = self.evntHandlers[event.id]
         except KeyError:
           self.logWarn(f'Error: No internal handler')
         try: handler(event)
-        except:
-          self.logError(f'An error occurred during handling event "{event.key}"')
+        except Exception as exc:
+          message = self.errorMsgs[event.id] if event.id in self.errorMsgs.keys()\
+            else f'An error occurred during handling event "{event.id}"'
+          ExecutorEvent(self, 'PluginError', critical=True, message=message,
+            **excToKwargs(exc))
           self.quitting = True
-          raise
 
   def quitProgram(self):
-    self.evntQueue.put(Event('quit'))
+    ExecutorEvent(self, 'StopProgram')
+    self.quit()
 
   # Internal event handlers
 
@@ -52,12 +61,7 @@ class Executor(Logger):
       exec(f'self.plugin.cnf.{path} = {value}')
 
   def tickPlugin(self, event):
-    try: self.plugin.update()
-    except Exception as exc:
-      self.logError(f'Error during tick in plugin {self.plugin.key}')
-      self.cmndQueue.put(Event('error', exception=exc,
-        source=self.plugin.key, type='tick'))
-      raise
+    self.plugin.update()
 
   def handleEvent(self, event):
     self.evntHandlers[event.key](event)
@@ -66,18 +70,6 @@ class Executor(Logger):
     self.quitting = True
     self.plugin.quit()
 
-  # Methods called by the Plugin
-
-  def addEvtHandler(self, key, method):
-    self.evntHandlers[key] = method
-    self.evntQueue.put(Event('addEvtHandler', evtkey=key, plugin=self.plugin.key))
-
-  def pushEvnt(self, event):
-    self.evntQueue.put(event)
-
-  def pushTask(self, task):
-    self.taskQueue.put(task)
-
 
 def runPlugin(plugin, forceQuit, plgnQueue, evntQueue, logLock):
   executor = Executor(plugin, forceQuit, plgnQueue, evntQueue, logLock)
@@ -85,3 +77,9 @@ def runPlugin(plugin, forceQuit, plgnQueue, evntQueue, logLock):
   except (EOFError, BrokenPipeError): pass
   except KeyboardInterrupt:
     executor.quitProgram()
+
+def excToKwargs(exception):
+  name = exception.__class__.__name__
+  info = exception.args[0]
+  traceback = ''.join(format_tb(exception.__traceback__))
+  return {'name':name, 'info':info, 'traceback':traceback}

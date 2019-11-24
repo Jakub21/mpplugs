@@ -1,9 +1,7 @@
-from Pluginable import Program
+import Pluginable as plg
 
 if __name__ == '__main__':
-  prog = Program()
-  prog.config(
-    loaderDirectories = ['myplugs'],
-  )
+  plg.Settings.Compiler.pluginDirectories = ['./Plugins/myplugs']
+  prog = plg.Program()
   prog.preload()
   prog.run()
