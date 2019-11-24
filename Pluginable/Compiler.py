@@ -2,30 +2,30 @@ import multiprocessing as mpr
 from time import sleep
 import os
 from Pluginable.Executor import runPlugin
-from Pluginable.Logger import Logger
+from Pluginable.Logger import *
 from Pluginable.Settings import Settings
 from Pluginable.Namespace import Namespace
 from Pluginable.FileManager import ifnmkdir, rmtree
 
-class Compiler(Logger):
+class Compiler(LogIssuer):
   def __init__(self, prog):
-    super().__init__('Compiler', 'pluginable', prog.logLock)
+    self.setIssuerData('kernel', 'Compiler')
     self.prog = prog
     self.target = Settings.Compiler.cacheDirectory
     self.directories = Settings.Compiler.pluginDirectories
     self.pluginsToOmit = Settings.Compiler.omitPlugins
 
   def compile(self):
-    self.logNote('Compiling plugins')
+    Note(self, 'Compiling plugins')
     for path in self.directories:
       try: keys = [d for d in next(os.walk(path))[1] if not d.startswith('__')]
       except StopIteration:
-        self.logError(f'Can not compile plugins, directory "{path}" does not exist')
+        Error(self, f'Can not compile plugins, directory "{path}" does not exist')
         exit()
       total = len(keys)
       for index, pluginKey in enumerate(keys):
         if pluginKey in self.pluginsToOmit: continue
-        self.logInfo(f'Compiling ({index+1} of {total}) "{path}/{pluginKey}"')
+        Info(self, f'Compiling ({index+1} of {total}) "{path}/{pluginKey}"')
         self.compilePlugin(path, pluginKey)
 
   def compilePlugin(self, directory, pluginKey):
@@ -53,20 +53,20 @@ class Compiler(Logger):
     f.close()
 
   def load(self):
-    self.logNote('Loading plugins')
+    Note(self, 'Loading plugins')
     plugins = []
     files = [f for f in next(os.walk(self.target))[2] if f.endswith('.py')]
     total = len(files)
     for index, filename in enumerate(files):
       pluginKey = filename[:-3]
-      self.logInfo(f'Loading ({index+1} of {total}) "{pluginKey}"')
+      Info(self, f'Loading ({index+1} of {total}) "{pluginKey}"')
       self.loadPlugin(pluginKey)
 
   def loadPlugin(self, pluginKey):
     exec(f'from {self.target} import {pluginKey} as plugin')
 
     PluginClass = eval(f'plugin.{pluginKey}')
-    instance = PluginClass(pluginKey, self.prog.logLock)
+    instance = PluginClass(pluginKey)
 
     instance.tasks = Namespace()
     for k in dir(eval('plugin')):
@@ -80,7 +80,7 @@ class Compiler(Logger):
     queue = self.prog.manager.Queue()
     forceQuit = self.prog.manager.Value('i', 0)
     proc = mpr.Process(target=runPlugin, args=[instance, forceQuit, queue,
-      self.prog.evntQueue, self.prog.logLock])
+      self.prog.evntQueue])
     proc.start()
     pluginData = Namespace(key=pluginKey, proc=proc, queue=queue, forceQuit=forceQuit)
     self.prog.plugins[pluginKey] = pluginData

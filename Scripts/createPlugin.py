@@ -3,7 +3,7 @@ from _scriptUtils import *
 
 class data:
   scope = '''
-from Pluginable import Plugin, Task, Event
+pass
 '''
   config = '''
 class Config:

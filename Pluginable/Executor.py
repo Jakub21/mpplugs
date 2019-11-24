@@ -1,12 +1,12 @@
 import multiprocessing as mpr
 from traceback import format_tb
-from Pluginable.Logger import Logger
+from Pluginable.Logger import *
 from Pluginable.Namespace import Namespace
 from Pluginable.Event import ExecutorEvent
 
-class Executor(Logger):
-  def __init__(self, plugin, forceQuit, plgnQueue, evntQueue, logLock):
-    super().__init__(plugin.key, 'plugin', logLock)
+class Executor(LogIssuer):
+  def __init__(self, plugin, forceQuit, plgnQueue, evntQueue):
+    self.setIssuerData('plugin', plugin.key)
     self.quitting = False
     self.plugin = plugin
     self.forceQuit = forceQuit
@@ -24,7 +24,7 @@ class Executor(Logger):
       tick = f'Plugin tick error ({plugin.key})',
       quit = f'Plugin cleanup error ({plugin.key})',
     )
-    self.logInfo(f'Starting plugin init')
+    Info(self, f'Starting plugin init')
     self.plugin.init()
 
   def updateLoop(self):
@@ -37,7 +37,7 @@ class Executor(Logger):
         event = self.plgnQueue.get()
         try: handler = self.evntHandlers[event.id]
         except KeyError:
-          self.logWarn(f'Error: No internal handler')
+          Warn(self, f'Error: No internal handler')
         try: handler(event)
         except Exception as exc:
           message = self.errorMsgs[event.id] if event.id in self.errorMsgs.keys()\
@@ -56,7 +56,7 @@ class Executor(Logger):
     for path, value in event.items():
       try: eval(f'self.plugin.cnf.{path}')
       except AttributeError:
-        self.logWarn(f'Config error in {self.plugin.key}: path {path} does not exist')
+        Warn(self, f'Config error in {self.plugin.key}: path {path} does not exist')
       if type(value) == str: value = f'"{value}"'
       exec(f'self.plugin.cnf.{path} = {value}')
 
@@ -71,8 +71,8 @@ class Executor(Logger):
     self.plugin.quit()
 
 
-def runPlugin(plugin, forceQuit, plgnQueue, evntQueue, logLock):
-  executor = Executor(plugin, forceQuit, plgnQueue, evntQueue, logLock)
+def runPlugin(plugin, forceQuit, plgnQueue, evntQueue):
+  executor = Executor(plugin, forceQuit, plgnQueue, evntQueue)
   try: executor.updateLoop()
   except (EOFError, BrokenPipeError): pass
   except KeyboardInterrupt:

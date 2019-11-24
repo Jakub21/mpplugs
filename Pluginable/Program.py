@@ -1,16 +1,15 @@
 from Pluginable.Namespace import Namespace
-from Pluginable.Logger import Logger
+from Pluginable.Logger import *
 from Pluginable.Event import Event
 from Pluginable.Compiler import Compiler
 from Pluginable.FileManager import CleanPyCache
 import multiprocessing as mpr
 from time import sleep
 
-class Program(Logger):
+class Program(LogIssuer):
   def __init__(self):
     self.manager = mpr.Manager()
-    self.logLock = self.manager.Lock()
-    super().__init__('Program', 'pluginable', self.logLock)
+    self.setIssuerData('kernel', 'Program')
     self.quitting = False
     self.tick = 0
     self.evntQueue = self.manager.Queue()
@@ -29,15 +28,15 @@ class Program(Logger):
       exec(f'self.plugins.{pluginKey}.cnf.{key} = {value}')
 
   def preload(self):
-    self.logNote('Starting program init')
+    Note(self, 'Starting program init')
     self.compiler.compile()
     self.compiler.load()
     sleep(0.25)
-    self.logNote('Program init complete')
+    Note(self, 'Program init complete')
     self.phase = 'preloaded'
 
   def run(self):
-    self.logInfo('Starting')
+    Info(self, 'Starting')
     self.phase = 'running'
     while not self.quitting:
       try: self.update()
@@ -58,7 +57,7 @@ class Program(Logger):
       try: hndPlugins = self.evntHandlers[event.id]
       except KeyError:
         if event.id not in self.noEvtHandlerWarns:
-          self.logWarn(f'Event "{event.id}" has no handlers assigned')
+          Warn(self, f'Event "{event.id}" has no handlers assigned')
           self.noEvtHandlerWarns.append(event.id)
         continue
       for handler in hndPlugins:
@@ -70,7 +69,7 @@ class Program(Logger):
     # set program flags
     if self.phase == 'quitting': return
     self.phase = 'quitting'
-    self.logNote('Starting cleanup')
+    Note(self, 'Starting cleanup')
     self.quitting = True
     # quit plugins
     for key, plugin in self.plugins.items():
@@ -80,7 +79,7 @@ class Program(Logger):
     for key, plugin in self.plugins.items():
       plugin.proc.join()
     # working directory cleanup
-    self.logInfo('Deleting temporary files')
+    Info(self, 'Deleting temporary files')
     CleanPyCache()
     self.compiler.removeTemp()
 
@@ -92,7 +91,7 @@ class Program(Logger):
 
   def onError(self, event):
     prefix = ['PluginReset', 'Critical'][event.critical]
-    self.logError(f'{prefix}: {event.message}\n' + event.traceback + \
+    Error(self, f'{prefix}: {event.message}\n' + event.traceback + \
       f'{event.name}: {event.info}')
     self.phase = 'exception'
     if event.critical: self.quit()

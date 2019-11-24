@@ -1,11 +1,11 @@
-from Pluginable.Logger import Logger
+from Pluginable.Logger import *
 from Pluginable.Namespace import Namespace
 from Pluginable.Event import PluginEvent
 
-class Plugin(Logger):
-  def __init__(self, key, logLock):
+class Plugin(LogIssuer):
+  def __init__(self, key):
     self.key = key
-    super().__init__(self.key, 'plugin', logLock)
+    self.setIssuerData('plugin', self.key)
     self.tick = 0
 
   def init(self):
@@ -15,7 +15,7 @@ class Plugin(Logger):
     self.tick += 1
 
   def quit(self):
-    self.logInfo(f'Plugin {self.key} quits')
+    Info(self, f'Plugin {self.key} quits')
 
   def __repr__(self):
     return f'<Plugin {self.key}>'

@@ -2,43 +2,53 @@ from datetime import datetime
 from Pluginable.Namespace import Namespace
 from Pluginable.Settings import Settings
 
-from colorama import init as cInit, Fore as cf
-from colorama import Style as cs
+from colorama import init as coloramaInit
+from colorama import Style as cs, Fore as cf
 cs.clr = cs.RESET_ALL
-cInit()
+print('-'*64, 'init colors', '-'*64, sep='\n')
+coloramaInit(convert=True)
 
-class Logger:
-  def __init__(self, id, mode, lock):
-    self.logger = Namespace()
-    self.logger.lock = lock
-    self.logger.id = id
-    self.logger.mode = { 'pluginable': 'Kernel', 'plugin': 'Plugin'}[mode]
+try: Settings.Logger.Start
+except: Settings.Logger.Start = datetime.now()
 
-  def _Time(self, color):
-    # TODO: In new logger include time relative to start of the program
-    fs = '%p %I:%M:%S' if Settings.Logger.timeFormat == '12h' else '%H:%M:%S'
-    return f'{color}@{datetime.now().strftime(fs)}{cs.clr} '
+class LogIssuer:
+  def setIssuerData(self, issuerType, entPath):
+    self._logger_data = Namespace(type=issuerType, path=entPath)
+    coloramaInit()
 
-  def _Log(self, timeColor, idColor, msgColor, *msg):
-    try: self.logger.lock.acquire()
-    except FileNotFoundError: return
-    text = self._Time(timeColor) + idColor
-    text += f'<{self.logger.mode}::{self.logger.id}> '
-    text += cs.clr + msgColor + ' '.join([str(m) for m in msg]) + cs.clr
-    print(text)
-    self.logger.lock.release()
+def _getTime(color):
+  time = datetime.now()
+  if Settings.Logger.timeRelative:
+    delta = time - Settings.Logger.Start
+    time = str(delta)
+  else:
+    if Settings.Logger.timeFormat == '12h': fs = '%p %I:%M:%S'
+    elif Settings.Logger.timeFormat == '24h': fs = '%H:%M:%S'
+    time = time.strftime(fs)
+  if color is not None: return f'{color}@{time}{cs.clr} '
+  else: return '@' + time
 
-  def logError(self, *msg):
-    self._Log(cf.LIGHTRED_EX, cf.LIGHTRED_EX, cf.LIGHTRED_EX, *msg)
+def _format(data, output, level, *message):
+  time = _getTime(cf.LIGHTMAGENTA_EX if output.colored else None)
+  message = ' '.join(message)
+  if not output.colored: return f'{time} <{data.type}:{data.path}> {message}\n'
+  else:
+    prefixColor, msgColor = Settings.Logger.colors[level]
+    prefixColor = eval(f'cf.{prefixColor}')
+    msgColor = eval(f'cf.{msgColor}')
+    return f'{time} {prefixColor}<{data.type}:{data.path}>{cs.clr} ' + \
+      f'{msgColor}{message}{cs.clr}\n'
 
-  def logWarn(self, *msg):
-    self._Log(cf.LIGHTMAGENTA_EX, cf.LIGHTYELLOW_EX, cf.LIGHTYELLOW_EX, *msg)
+def _addLog(entity, level, *message):
+  try: data = entity._logger_data
+  except AttributeError: data = Namespace(type='unknown', path='UNKNOWN')
+  levelno = ['debug', 'info', 'note', 'warn', 'error'].index(level)
+  for output in Settings.Logger.logOutputs:
+    if levelno >= output.minLevel and levelno <= output.maxLevel:
+      output.write(_format(data, output, level, *message))
 
-  def logNote(self, *msg):
-    self._Log(cf.LIGHTMAGENTA_EX, cf.LIGHTCYAN_EX, cf.WHITE, *msg)
-
-  def logInfo(self, *msg):
-    self._Log(cf.LIGHTMAGENTA_EX, cf.WHITE, cf.WHITE, *msg)
-
-  def logDebug(self, *msg):
-    self._Log(cf.LIGHTMAGENTA_EX, cf.LIGHTBLACK_EX, cf.LIGHTBLACK_EX, *msg)
+def Debug(issuer, *message): _addLog(issuer, 'debug', *message)
+def Info(issuer, *message): _addLog(issuer, 'info', *message)
+def Note(issuer, *message): _addLog(issuer, 'note', *message)
+def Warn(issuer, *message): _addLog(issuer, 'warn', *message)
+def Error(issuer, *message): _addLog(issuer, 'error', *message)
