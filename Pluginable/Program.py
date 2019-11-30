@@ -1,8 +1,9 @@
 from Pluginable.Namespace import Namespace
 from Pluginable.Logger import *
-from Pluginable.Event import Event
+from Pluginable.Event import StockEvent
 from Pluginable.Compiler import Compiler
 from Pluginable.FileManager import CleanPyCache
+import Pluginable.MultiHandler as mh
 import multiprocessing as mpr
 from time import sleep
 
@@ -48,11 +49,9 @@ class Program(LogIssuer):
     for plugin in self.plugins.values():
       try: queue = plugin.queue
       except AttributeError: continue
-      plugin.queue.put(Event(None, 'tick'))
-    while True:
-      try:
-        if self.evntQueue.empty(): break
-      except EOFError: exit()
+      try: plugin.queue.put(StockEvent('tick'))
+      except: pass
+    while not mh.empty(self.evntQueue):
       event = self.evntQueue.get()
       try: hndPlugins = self.evntHandlers[event.id]
       except KeyError:
@@ -60,10 +59,13 @@ class Program(LogIssuer):
           Warn(self, f'Event "{event.id}" has no handlers assigned')
           self.noEvtHandlerWarns.append(event.id)
         continue
+      except AttributeError:
+        Warn(self, f'There was a boolean in event queue')
+        continue
       for handler in hndPlugins:
         if callable(handler): handler(event) # Execute internal handler
         else: # Send event to all plugin executors with handlers
-          self.plugins[handler].queue.put(Event('evnt', event=event))
+          mh.push(self.plugins[handler].queue, StockEvent('evnt', event=event))
 
   def quit(self, event=None):
     # set program flags
@@ -73,8 +75,8 @@ class Program(LogIssuer):
     self.quitting = True
     # quit plugins
     for key, plugin in self.plugins.items():
-      if self.phase == 'exception': plugin.forceQuit.value = True
-      else: plugin.queue.put(Event(None, 'quit'))
+      if self.phase == 'exception': mh.set(plugin.forceQuit, True)
+      else: mh.push(plugin.queue, StockEvent('quit'))
     sleep(0.3)
     for key, plugin in self.plugins.items():
       plugin.proc.join()

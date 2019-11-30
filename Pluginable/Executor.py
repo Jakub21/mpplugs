@@ -3,6 +3,7 @@ from traceback import format_tb
 from Pluginable.Logger import *
 from Pluginable.Namespace import Namespace
 from Pluginable.Event import ExecutorEvent
+import Pluginable.MultiHandler as mh
 
 class Executor(LogIssuer):
   def __init__(self, plugin, forceQuit, plgnQueue, evntQueue):
@@ -29,12 +30,11 @@ class Executor(LogIssuer):
 
   def updateLoop(self):
     while not self.quitting:
-      try: forceQuit = self.forceQuit.value
-      except FileNotFoundError: return
+      forceQuit = mh.get(self.forceQuit)
       if forceQuit: break
       incoming = []
-      while not self.plgnQueue.empty():
-        event = self.plgnQueue.get()
+      while not mh.empty(self.plgnQueue):
+        event = mh.pop(self.plgnQueue)
         try: handler = self.evntHandlers[event.id]
         except KeyError:
           Warn(self, f'Error: No internal handler')
@@ -74,7 +74,6 @@ class Executor(LogIssuer):
 def runPlugin(plugin, forceQuit, plgnQueue, evntQueue):
   executor = Executor(plugin, forceQuit, plgnQueue, evntQueue)
   try: executor.updateLoop()
-  except (EOFError, BrokenPipeError): pass
   except KeyboardInterrupt:
     executor.quitProgram()
 

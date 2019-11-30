@@ -11,8 +11,8 @@ Settings = Namespace(
       compilationPrefix = '''
 # File compiled by pluginable, any edits will be automatically overwritten
 from Pluginable import Plugin, Event
-# from Pluginable import Debug, Info, Note, Warn, Error
 from Pluginable import Settings
+from Pluginable.Logger import Debug, Info, Note, Warn, Error
 
 # Plugin code
 
@@ -23,17 +23,21 @@ from Pluginable import Settings
   Logger = Namespace(
     timeFormat = '24h',
     timeRelative = False,
-    logOutputs = [stdout, stderr],
+    logOutputs = [stdout, ],
     colors = Namespace( # property names of Colorama.Fore
-      debug = ('LIGHTBLACK_EX', 'LIGHTBLACK_EX'),
-      info = ('WHITE', 'WHITE'),
-      note = ('LIGHTCYAN_EX', 'WHITE'),
-      warn = ('LIGHTYELLOW_EX', 'LIGHTYELLOW_EX'),
-      error = ('LIGHTRED_EX', 'LIGHTRED_EX'),
+      debug = ('l_black', 'l_black'),
+      info = ('l_white', 'l_white'),
+      note = ('l_cyan', 'l_white'),
+      warn = ('l_yellow', 'l_yellow'),
+      error = ('l_red', 'l_red'),
     )
   ),
 
   Text = Namespace(
+    LogIssuerTypes = Namespace(
+      kernel = 'Kernel',
+      plugin = 'Plugin',
+    ),
     ErrorMessages = Namespace(
       dummy = 'Dummy error from {key}',
     )

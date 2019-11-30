@@ -23,7 +23,5 @@ class FileOutput(StreamOutput):
     with open(self.filename) as file:
       file.write(data)
 
-stdout = StreamOutput(sys.stdout, colored=False)
+stdout = StreamOutput(sys.stdout, colored=True)
 stderr = StreamOutput(sys.stderr, minLevel=Levels.Critical)
-
-# TODO: Colored stopped working on windows

@@ -1,3 +1,4 @@
+import Pluginable.MultiHandler as mh
 
 class Event:
   def __init__(self, issuer, id, **data):
@@ -15,16 +16,16 @@ class Event:
 
 class StockEvent(Event):
   def __init__(self, id, **kwargs):
-    super().__init__(id, '<Kernel>' **kwargs)
+    super().__init__('_Kernel_', id, **kwargs)
 
 
 class ExecutorEvent(Event):
   def __init__(self, issuer, id, **kwargs):
     super().__init__(issuer.plugin.key, id, **kwargs)
-    issuer.evntQueue.put(self)
+    mh.push(issuer.evntQueue, self)
 
 
 class PluginEvent(Event):
   def __init__(self, issuer, id, **kwargs):
     super().__init__(issuer.key, id, **kwargs)
-    issuer.executor.evntQueue.put(self)
+    mh.push(issuer.executor.evntQueue, self)
