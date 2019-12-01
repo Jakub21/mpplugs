@@ -90,6 +90,11 @@ class Compiler(LogIssuer):
 
     queue = self.prog.manager.Queue()
     mh.push(queue, StockEvent('GlobalSettings', data=self.prog.settings))
+    try:
+      config = self.prog.pluginConfigs[pluginKey]
+      mh.push(queue, StockEvent('Config', data=config))
+    except KeyError: pass # No changes in plugin config
+    mh.push(queue, StockEvent('Init'))
     forceQuit = self.prog.manager.Value('i', 0)
     proc = mpr.Process(target=runPlugin, args=[instance, forceQuit, queue,
       self.prog.evntQueue])

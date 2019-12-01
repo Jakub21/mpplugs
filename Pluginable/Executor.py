@@ -17,6 +17,7 @@ class Executor(LogIssuer):
     self.plugin.executor = self
     self.evntHandlers = Namespace(
       Config = [self.configure],
+      Init = [self.initPlugin],
       Tick = [self.tickPlugin],
       Quit = [self.quit],
       GlobalSettings = [self.setGlobalSettings],
@@ -26,13 +27,6 @@ class Executor(LogIssuer):
       tick = f'Plugin tick error ({plugin.key})',
       quit = f'Plugin cleanup error ({plugin.key})',
     )
-    Info(self, f'Starting plugin init')
-    try: self.plugin.init()
-    except Exception as exc:
-      message = 'An error occurred during plugin init'
-      ExecutorEvent(self, 'PluginError', critical=True, message=message,
-        **excToKwargs(exc))
-      self.quitting = True
 
   def updateLoop(self):
     while not self.quitting:
@@ -59,6 +53,15 @@ class Executor(LogIssuer):
     self.quit()
 
   # Internal event handlers
+
+  def initPlugin(self, event):
+    Info(self, f'Starting plugin init')
+    try: self.plugin.init()
+    except Exception as exc:
+      message = 'An error occurred during plugin init'
+      ExecutorEvent(self, 'PluginError', critical=True, message=message,
+        **excToKwargs(exc))
+      self.quitting = True
 
   def configure(self, event):
     for path, value in event.data.items():

@@ -25,6 +25,7 @@ class Program(LogIssuer):
     self.compiler = Compiler(self)
     self.phase = 'instance'
     self.settings = {}
+    self.pluginConfigs = {}
 
   def updateSettings(self, data):
     if self.phase != 'instance':
@@ -44,15 +45,19 @@ class Program(LogIssuer):
     if self.phase != 'preloaded':
       Error(self, 'Plugins can be configured only after preload method was called')
       exit()
-    mh.push(self.plugins[pluginKey].queue, StockEvent('Config', data=data))
+    self.pluginConfigs[pluginKey] = data
 
   def preload(self):
-    Note(self, 'Starting program init')
+    Note(self, 'Starting plugins preload')
     self.compiler.compile()
+    self.phase = 'preloaded'
+
+  def init(self):
+    Note(self, 'Starting program init')
     self.compiler.load()
     sleep(0.25)
     Note(self, 'Program init complete')
-    self.phase = 'preloaded'
+    self.phase = 'initialized'
 
   def run(self):
     Info(self, 'Starting')
