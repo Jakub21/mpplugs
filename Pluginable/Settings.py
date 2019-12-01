@@ -1,8 +1,12 @@
 from Pluginable.Namespace import Namespace
 from Pluginable.Event import Event
 from Pluginable.LogOutputs import stdout, stderr
+from datetime import datetime
 
 Settings = Namespace(
+
+  StartTime = datetime.now(),
+
   Compiler = Namespace(
     cacheDirectory = '_PluginableCache',
     pluginDirectories = [],

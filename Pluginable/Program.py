@@ -24,7 +24,9 @@ class Program(LogIssuer):
     self.noEvtHandlerWarns = []
     self.compiler = Compiler(self)
     self.phase = 'instance'
-    self.settings = {}
+    self.settings = {
+      'StartTime': Settings.StartTime
+    }
     self.pluginConfigs = {}
 
   def updateSettings(self, data):
@@ -33,13 +35,18 @@ class Program(LogIssuer):
       exit()
     Note(self, 'Applying changes in settings')
     self.settings = data
+    delKeys = []
     for key, val in data.items():
       try: eval(f'Settings.{key}')
       except (KeyError, AttributeError):
         Warn(self, f'Setting "{key}" does not exist')
+        delKeys += [key]
         continue
       if type(val) == str: val = f'"{val}"'
       exec(f'Settings.{key} = {val}')
+    for key in delKeys:
+      del data[key]
+    self.settings['StartTime'] = Settings.StartTime
 
   def configPlugin(self, pluginKey, data):
     if self.phase != 'preloaded':
@@ -48,6 +55,7 @@ class Program(LogIssuer):
     self.pluginConfigs[pluginKey] = data
 
   def preload(self):
+    Info(self, str(Settings.StartTime))
     Note(self, 'Starting plugins preload')
     self.compiler.compile()
     self.phase = 'preloaded'

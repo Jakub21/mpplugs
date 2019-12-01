@@ -1,6 +1,7 @@
+from datetime import datetime
 import multiprocessing as mpr
 from traceback import format_tb
-import Pluginable
+from Pluginable.Settings import Settings
 from Pluginable.Logger import *
 from Pluginable.Namespace import Namespace
 from Pluginable.Event import ExecutorEvent
@@ -80,12 +81,14 @@ class Executor(LogIssuer):
   def setGlobalSettings(self, event):
     data = event.data
     for key, val in data.items():
-      try: eval(f'Pluginable.Settings.{key}')
+      try: eval(f'Settings.{key}')
       except (KeyError, AttributeError):
         Warn(self, f'Setting "{key}" does not exist')
         continue
       if type(val) == str: val = f'"{val}"'
-      exec(f'Pluginable.Settings.{key} = {val}')
+      elif type(val) == datetime:
+        val = f"datetime.strptime('{val}', '%Y-%m-%d %H:%M:%S.%f')"
+      exec(f'Settings.{key} = {val}')
 
   def quit(self, event=None):
     self.quitting = True

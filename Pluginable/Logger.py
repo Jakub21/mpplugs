@@ -3,9 +3,6 @@ from Pluginable.Namespace import Namespace
 from Pluginable.Settings import Settings
 from Pluginable.LogColor import LogColor as CLR
 
-try: Settings.Logger.Start
-except: Settings.Logger.Start = datetime.now()
-
 class LogIssuer:
   def setIssuerData(self, issuerType, entPath):
     self._logger_data = Namespace(type=issuerType, path=entPath)
@@ -14,7 +11,7 @@ def _getTime():
   time = datetime.now()
   mode = Settings.Logger.timeMode
   if mode == 'relative':
-    delta = time - Settings.Logger.Start
+    delta = time - Settings.StartTime
     time = str(delta)
     time = time[:time.index('.')+2]
   elif mode == 'absolute':
