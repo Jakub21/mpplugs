@@ -1,6 +1,7 @@
 from Pluginable.Logger import *
 from Pluginable.Namespace import Namespace
 from Pluginable.Event import PluginEvent
+from traceback import format_tb
 
 class Plugin(LogIssuer):
   def __init__(self, key):
@@ -34,9 +35,12 @@ class Plugin(LogIssuer):
   def stopProgram(self):
     PluginEvent(self, 'StopProgram')
 
-  def raiseError(self, id, exception=None, message=None, severity=0):
-    PluginEvent(self, 'PluginError', exception=exception, message=message,
-      severity=severity)
+  def raiseError(self, id, exception, critical=False, message=None):
+    name = exception.__class__.__name__
+    info = exception.args[0]
+    traceback = ''.join(format_tb(exception.__traceback__))
+    PluginEvent(self, 'PluginError', critical=critical, message=message,
+      name=name, info=info, traceback=traceback)
 
   def pluginStatus(self):
     PluginEvent(self, 'PluginStatus', tick=self.tick,
