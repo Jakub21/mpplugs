@@ -13,12 +13,12 @@ class Compiler(LogIssuer):
   def __init__(self, prog):
     self.setIssuerData('kernel', 'Compiler')
     self.prog = prog
-    self.target = Settings.Compiler.cacheDirectory
-    self.directories = Settings.Compiler.pluginDirectories
-    self.pluginsToOmit = Settings.Compiler.omitPlugins
 
   def compile(self):
     Note(self, 'Compiling plugins')
+    self.target = Settings.Compiler.cacheDirectory
+    self.directories = Settings.Compiler.pluginDirectories
+    self.pluginsToOmit = Settings.Compiler.omitPlugins
     for path in self.directories:
       try: keys = [d for d in next(os.walk(path))[1] if not d.startswith('__')]
       except StopIteration:
@@ -89,7 +89,7 @@ class Compiler(LogIssuer):
       exit()
 
     queue = self.prog.manager.Queue()
-    mh.push(queue, StockEvent('GlobalSettings', data=Settings))
+    mh.push(queue, StockEvent('GlobalSettings', data=self.prog.settings))
     forceQuit = self.prog.manager.Value('i', 0)
     proc = mpr.Process(target=runPlugin, args=[instance, forceQuit, queue,
       self.prog.evntQueue])

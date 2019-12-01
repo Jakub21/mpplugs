@@ -1,3 +1,4 @@
+from Pluginable.Settings import Settings
 from Pluginable.Namespace import Namespace
 from Pluginable.Logger import *
 from Pluginable.Event import StockEvent
@@ -23,10 +24,27 @@ class Program(LogIssuer):
     self.noEvtHandlerWarns = []
     self.compiler = Compiler(self)
     self.phase = 'instance'
+    self.settings = {}
 
-  def configPlugin(self, pluginKey, kwargs):
-    for key, value in kwargs.items():
-      exec(f'self.plugins.{pluginKey}.cnf.{key} = {value}')
+  def updateSettings(self, data):
+    if self.phase != 'instance':
+      Error(self, 'Settings can not be changed after preload method was called')
+      exit()
+    Note(self, 'Applying changes in settings')
+    self.settings = data
+    for key, val in data.items():
+      try: eval(f'Settings.{key}')
+      except (KeyError, AttributeError):
+        Warn(self, f'Setting "{key}" does not exist')
+        continue
+      if type(val) == str: val = f'"{val}"'
+      exec(f'Settings.{key} = {val}')
+
+  def configPlugin(self, pluginKey, data):
+    if self.phase != 'preloaded':
+      Error(self, 'Plugins can be configured only after preload method was called')
+      exit()
+    mh.push(self.plugins[pluginKey].queue, StockEvent('Config', data=data))
 
   def preload(self):
     Note(self, 'Starting program init')
@@ -47,7 +65,7 @@ class Program(LogIssuer):
 
   def update(self):
     for plugin in self.plugins.values():
-      mh.push(plugin.queue, StockEvent('tick'))
+      mh.push(plugin.queue, StockEvent('Tick'))
     while not mh.empty(self.evntQueue):
       event = mh.pop(self.evntQueue)
       try: hndPlugins = self.evntHandlers[event.id]
@@ -73,7 +91,7 @@ class Program(LogIssuer):
     # quit plugins
     for key, plugin in self.plugins.items():
       if self.phase == 'exception': mh.set(plugin.forceQuit, True)
-      else: mh.push(plugin.queue, StockEvent('quit'))
+      else: mh.push(plugin.queue, StockEvent('Quit'))
     sleep(0.3)
     for key, plugin in self.plugins.items():
       plugin.proc.join()

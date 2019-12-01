@@ -16,9 +16,9 @@ class Executor(LogIssuer):
     self.evntQueue = evntQueue
     self.plugin.executor = self
     self.evntHandlers = Namespace(
-      cnfg = [self.configure],
-      tick = [self.tickPlugin],
-      quit = [self.quit],
+      Config = [self.configure],
+      Tick = [self.tickPlugin],
+      Quit = [self.quit],
       GlobalSettings = [self.setGlobalSettings],
     )
     self.errorMsgs = Namespace(
@@ -61,7 +61,7 @@ class Executor(LogIssuer):
   # Internal event handlers
 
   def configure(self, event):
-    for path, value in event.items():
+    for path, value in event.data.items():
       try: eval(f'self.plugin.cnf.{path}')
       except AttributeError:
         Warn(self, f'Config error in {self.plugin.key}: path {path} does not exist')
@@ -75,7 +75,14 @@ class Executor(LogIssuer):
     self.evntHandlers[event.id](event)
 
   def setGlobalSettings(self, event):
-    Pluginable.Settings = event.data
+    data = event.data
+    for key, val in data.items():
+      try: eval(f'Pluginable.Settings.{key}')
+      except (KeyError, AttributeError):
+        Warn(self, f'Setting "{key}" does not exist')
+        continue
+      if type(val) == str: val = f'"{val}"'
+      exec(f'Pluginable.Settings.{key} = {val}')
 
   def quit(self, event=None):
     self.quitting = True
