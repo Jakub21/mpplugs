@@ -23,5 +23,5 @@ class FileOutput(StreamOutput):
     with open(self.filename) as file:
       file.write(data)
 
-stdout = StreamOutput(sys.stdout, colored=True)
-stderr = StreamOutput(sys.stderr, minLevel=Levels.Critical)
+stdout = StreamOutput(sys.stdout, colored=True, maxLevel=Levels.Note)
+stderr = StreamOutput(sys.stderr, colored=True, minLevel=Levels.Warn)

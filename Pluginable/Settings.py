@@ -4,33 +4,36 @@ from Pluginable.LogOutputs import stdout, stderr
 
 Settings = Namespace(
   Compiler = Namespace(
-    cacheDirectory = 'PluginableCache',
+    cacheDirectory = '_PluginableCache',
     pluginDirectories = [],
     omitPlugins = [],
     data = Namespace(
       compilationPrefix = '''
 # File compiled by pluginable, any edits will be automatically overwritten
-from Pluginable import Plugin, Event
-from Pluginable import Settings
+from Pluginable import Plugin, Event, Settings, Namespace
 from Pluginable.Logger import Debug, Info, Note, Warn, Error
 
 # Plugin code
 
 '''
-    )
+    ),
   ),
 
   Logger = Namespace(
     timeFormat = '24h',
-    timeRelative = False,
-    logOutputs = [stdout, ],
-    colors = Namespace( # property names of Colorama.Fore
-      debug = ('l_black', 'l_black'),
-      info = ('l_white', 'l_white'),
-      note = ('l_cyan', 'l_white'),
-      warn = ('l_yellow', 'l_yellow'),
-      error = ('l_red', 'l_red'),
-    )
+    timeMode = 'absolute',
+    timePrefix = Namespace(
+      absolute = '@',
+      relative = 'T+',
+    ),
+    logOutputs = [stdout, stderr],
+    colors = Namespace( # level = (timeColor, prefixColor, messageColor)
+      debug = ('l_magenta', 'l_black', 'l_black'),
+      info = ('l_magenta', 'l_white', 'l_white'),
+      note = ('l_cyan', 'l_cyan', 'l_white'),
+      warn = ('l_yellow', 'l_yellow', 'l_yellow'),
+      error = ('l_red', 'l_red', 'l_red'),
+    ),
   ),
 
   Text = Namespace(
@@ -40,6 +43,6 @@ from Pluginable.Logger import Debug, Info, Note, Warn, Error
     ),
     ErrorMessages = Namespace(
       dummy = 'Dummy error from {key}',
-    )
+    ),
   )
 )

@@ -47,12 +47,9 @@ class Program(LogIssuer):
 
   def update(self):
     for plugin in self.plugins.values():
-      try: queue = plugin.queue
-      except AttributeError: continue
-      try: plugin.queue.put(StockEvent('tick'))
-      except: pass
+      mh.push(plugin.queue, StockEvent('tick'))
     while not mh.empty(self.evntQueue):
-      event = self.evntQueue.get()
+      event = mh.pop(self.evntQueue)
       try: hndPlugins = self.evntHandlers[event.id]
       except KeyError:
         if event.id not in self.noEvtHandlerWarns:
@@ -65,7 +62,7 @@ class Program(LogIssuer):
       for handler in hndPlugins:
         if callable(handler): handler(event) # Execute internal handler
         else: # Send event to all plugin executors with handlers
-          mh.push(self.plugins[handler].queue, StockEvent('evnt', event=event))
+          mh.push(self.plugins[handler].queue, event)
 
   def quit(self, event=None):
     # set program flags

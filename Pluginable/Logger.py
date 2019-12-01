@@ -10,28 +10,31 @@ class LogIssuer:
   def setIssuerData(self, issuerType, entPath):
     self._logger_data = Namespace(type=issuerType, path=entPath)
 
-def _getTime(color):
+def _getTime():
   time = datetime.now()
-  if Settings.Logger.timeRelative:
+  mode = Settings.Logger.timeMode
+  if mode == 'relative':
     delta = time - Settings.Logger.Start
     time = str(delta)
-  else:
+    time = time[:time.index('.')+2]
+  elif mode == 'absolute':
     if Settings.Logger.timeFormat == '12h': fs = '%p %I:%M:%S'
     elif Settings.Logger.timeFormat == '24h': fs = '%H:%M:%S'
     time = time.strftime(fs)
-  if color is not None: return f'{CLR.fg[color]}@{time}{CLR.rst}'
-  else: return '@' + time
+  return Settings.Logger.timePrefix[mode] + time
 
 def _format(data, output, level, *message):
-  timeColor = 'l_yellow' if level in ['warn', 'error'] else 'l_magenta'
-  time = _getTime(timeColor if output.colored else None)
   message = ' '.join([str(elm) for elm in message])
-  if not output.colored: return f'{time} <{data.type}:{data.path}> {message}\n'
+  time = _getTime()
+  if not output.colored:
+    return f'{time} <{data.type}:{data.path}> {message}\n'
   else:
-    prefixColor, msgColor = Settings.Logger.colors[level]
+    timeColor, prefixColor, msgColor = Settings.Logger.colors[level]
+    timeColor = CLR.fg[timeColor]
     prefixColor, msgColor = CLR.fg[prefixColor], CLR.fg[msgColor]
     issuerType = Settings.Text.LogIssuerTypes[data.type]
-    return f'{time} {prefixColor}<{issuerType}:{data.path}>{CLR.rst} ' + \
+    return f'{timeColor}{time}{CLR.rst} ' + \
+      f'{prefixColor}<{issuerType}:{data.path}>{CLR.rst} ' + \
       f'{msgColor}{message}{CLR.rst}\n'
 
 def _addLog(entity, level, *message):

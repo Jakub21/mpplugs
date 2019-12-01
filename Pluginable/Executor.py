@@ -1,5 +1,6 @@
 import multiprocessing as mpr
 from traceback import format_tb
+import Pluginable
 from Pluginable.Logger import *
 from Pluginable.Namespace import Namespace
 from Pluginable.Event import ExecutorEvent
@@ -15,10 +16,10 @@ class Executor(LogIssuer):
     self.evntQueue = evntQueue
     self.plugin.executor = self
     self.evntHandlers = Namespace(
-      cnfg = self.configure,
-      tick = self.tickPlugin,
-      evnt = self.handleEvent,
-      quit = self.quit
+      cnfg = [self.configure],
+      tick = [self.tickPlugin],
+      quit = [self.quit],
+      GlobalSettings = [self.setGlobalSettings],
     )
     self.errorMsgs = Namespace(
       cnfg = f'Plugin configuration error ({plugin.key})',
@@ -26,7 +27,12 @@ class Executor(LogIssuer):
       quit = f'Plugin cleanup error ({plugin.key})',
     )
     Info(self, f'Starting plugin init')
-    self.plugin.init()
+    try: self.plugin.init()
+    except Exception as exc:
+      message = 'An error occurred during plugin init'
+      ExecutorEvent(self, 'PluginError', critical=True, message=message,
+        **excToKwargs(exc))
+      self.quitting = True
 
   def updateLoop(self):
     while not self.quitting:
@@ -35,16 +41,18 @@ class Executor(LogIssuer):
       incoming = []
       while not mh.empty(self.plgnQueue):
         event = mh.pop(self.plgnQueue)
-        try: handler = self.evntHandlers[event.id]
+        try: handlers = self.evntHandlers[event.id]
         except KeyError:
-          Warn(self, f'Error: No internal handler')
-        try: handler(event)
-        except Exception as exc:
-          message = self.errorMsgs[event.id] if event.id in self.errorMsgs.keys()\
-            else f'An error occurred during handling event "{event.id}"'
-          ExecutorEvent(self, 'PluginError', critical=True, message=message,
-            **excToKwargs(exc))
-          self.quitting = True
+          Warn(self, f'Unhandled event "{event.id}"')
+          continue
+        for handler in handlers:
+          try: handler(event)
+          except Exception as exc:
+            message = self.errorMsgs[event.id] if event.id in self.errorMsgs.keys()\
+              else f'An error occurred during handling event "{event.id}"'
+            ExecutorEvent(self, 'PluginError', critical=True, message=message,
+              **excToKwargs(exc))
+            self.quitting = True
 
   def quitProgram(self):
     ExecutorEvent(self, 'StopProgram')
@@ -64,7 +72,10 @@ class Executor(LogIssuer):
     self.plugin.update()
 
   def handleEvent(self, event):
-    self.evntHandlers[event.key](event)
+    self.evntHandlers[event.id](event)
+
+  def setGlobalSettings(self, event):
+    Pluginable.Settings = event.data
 
   def quit(self, event=None):
     self.quitting = True

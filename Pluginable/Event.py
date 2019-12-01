@@ -10,7 +10,7 @@ class Event:
     return {k:v for k, v in self.__dict__.items() if k != 'id'}
 
   def __repr__(self):
-    args = ', '.join([f'{k}={v}' for k, v in self.getArgs()])
+    args = ', '.join([f'{k}={v}' for k, v in self.getArgs().items()])
     return f'<Event "{self.id}" {{{args}}}>'
 
 

@@ -6,6 +6,8 @@ from Pluginable.Logger import *
 from Pluginable.Settings import Settings
 from Pluginable.Namespace import Namespace
 from Pluginable.FileManager import ifnmkdir, rmtree
+from Pluginable.Event import StockEvent
+import Pluginable.MultiHandler as mh
 
 class Compiler(LogIssuer):
   def __init__(self, prog):
@@ -55,7 +57,10 @@ class Compiler(LogIssuer):
   def load(self):
     Note(self, 'Loading plugins')
     plugins = []
-    files = [f for f in next(os.walk(self.target))[2] if f.endswith('.py')]
+    try: files = [f for f in next(os.walk(self.target))[2] if f.endswith('.py')]
+    except StopIteration:
+      Error(self, 'No plugin directories added (Settings.Compiler.pluginDirectories)')
+      exit()
     total = len(files)
     for index, filename in enumerate(files):
       pluginKey = filename[:-3]
@@ -65,7 +70,10 @@ class Compiler(LogIssuer):
   def loadPlugin(self, pluginKey):
     exec(f'from {self.target} import {pluginKey} as plugin')
 
-    PluginClass = eval(f'plugin.{pluginKey}')
+    try: PluginClass = eval(f'plugin.{pluginKey}')
+    except AttributeError:
+      Error(self, f'[{pluginKey}] Main plugin class not found')
+      exit()
     instance = PluginClass(pluginKey)
 
     instance.tasks = Namespace()
@@ -75,9 +83,13 @@ class Compiler(LogIssuer):
         task.key = k[1:]
         task.plugin = instance
         instance.tasks[k[1:]] = task
-    instance.cnf = eval('plugin.Config')
+    try: instance.cnf = eval('plugin.Config')
+    except AttributeError:
+      Error(self, f'[{pluginKey}] Config class not found')
+      exit()
 
     queue = self.prog.manager.Queue()
+    mh.push(queue, StockEvent('GlobalSettings', data=Settings))
     forceQuit = self.prog.manager.Value('i', 0)
     proc = mpr.Process(target=runPlugin, args=[instance, forceQuit, queue,
       self.prog.evntQueue])
