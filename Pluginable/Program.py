@@ -4,14 +4,17 @@ from Pluginable.Logger import *
 from Pluginable.Event import StockEvent
 from Pluginable.Compiler import Compiler
 from Pluginable.FileManager import CleanPyCache
+from Pluginable.TpsMonitor import TpsMonitor
 import Pluginable.MultiHandler as mh
 import multiprocessing as mpr
 from time import sleep
 
 class Program(LogIssuer):
-  def __init__(self):
+  def __init__(self, progName=''):
+    self.progName = progName
     self.manager = mpr.Manager()
     self.setIssuerData('kernel', 'Program')
+    self.tpsMon = TpsMonitor(Settings.Kernel.MaxProgramTicksPerSec)
     self.quitting = False
     self.tick = 0
     self.evntQueue = self.manager.Queue()
@@ -55,7 +58,7 @@ class Program(LogIssuer):
     self.pluginConfigs[pluginKey] = data
 
   def preload(self):
-    Info(self, str(Settings.StartTime))
+    Info(self, f'Started at {Settings.StartTime}')
     Note(self, 'Starting plugins preload')
     self.compiler.compile()
     self.phase = 'preloaded'
@@ -94,17 +97,20 @@ class Program(LogIssuer):
         if callable(handler): handler(event) # Execute internal handler
         else: # Send event to all plugin executors with handlers
           mh.push(self.plugins[handler].queue, event)
+    self.tpsMon.tick()
 
   def quit(self, event=None):
     # set program flags
     if self.phase == 'quitting': return
-    self.phase = 'quitting'
+    if self.phase != 'exception': self.phase = 'quitting'
     Note(self, 'Starting cleanup')
     self.quitting = True
     # quit plugins
     for key, plugin in self.plugins.items():
-      if self.phase == 'exception': mh.set(plugin.forceQuit, True)
-      else: mh.push(plugin.queue, StockEvent('Quit'))
+      if self.phase == 'exception': mh.set(plugin.quitStatus, 2)
+      else:
+        mh.set(plugin.quitStatus, 1)
+        mh.push(plugin.queue, StockEvent('Quit'))
     sleep(0.3)
     for key, plugin in self.plugins.items():
       plugin.proc.join()

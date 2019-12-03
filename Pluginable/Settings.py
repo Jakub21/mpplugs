@@ -7,6 +7,11 @@ Settings = Namespace(
 
   StartTime = datetime.now(),
 
+  Kernel = Namespace(
+    MaxProgramTicksPerSec = 128,
+    MaxExecutorTicksPerSec = 128,
+  ),
+
   Compiler = Namespace(
     cacheDirectory = '_PluginableCache',
     pluginDirectories = [],

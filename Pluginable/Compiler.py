@@ -16,7 +16,8 @@ class Compiler(LogIssuer):
 
   def compile(self):
     Note(self, 'Compiling plugins')
-    self.target = Settings.Compiler.cacheDirectory
+    target = Settings.Compiler.cacheDirectory
+    self.target = f'_{target}_{self.prog.progName}'
     self.directories = Settings.Compiler.pluginDirectories
     self.pluginsToOmit = Settings.Compiler.omitPlugins
     for path in self.directories:
@@ -95,11 +96,11 @@ class Compiler(LogIssuer):
       mh.push(queue, StockEvent('Config', data=config))
     except KeyError: pass # No changes in plugin config
     mh.push(queue, StockEvent('Init'))
-    forceQuit = self.prog.manager.Value('i', 0)
-    proc = mpr.Process(target=runPlugin, args=[instance, forceQuit, queue,
+    quitStatus = self.prog.manager.Value('i', 0)
+    proc = mpr.Process(target=runPlugin, args=[instance, quitStatus, queue,
       self.prog.evntQueue])
     proc.start()
-    pluginData = Namespace(key=pluginKey, proc=proc, queue=queue, forceQuit=forceQuit)
+    pluginData = Namespace(key=pluginKey, proc=proc, queue=queue, quitStatus=quitStatus)
     self.prog.plugins[pluginKey] = pluginData
 
   def removeTemp(self):
