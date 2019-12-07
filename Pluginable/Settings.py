@@ -29,6 +29,7 @@ from Pluginable.Logger import Debug, Info, Note, Warn, Error
   ),
 
   Logger = Namespace(
+    enablePluginTps = False,
     timeFormat = '24h',
     timeMode = 'absolute',
     timePrefix = Namespace(

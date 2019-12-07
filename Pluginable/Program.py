@@ -32,6 +32,17 @@ class Program(LogIssuer):
     }
     self.pluginConfigs = {}
 
+  def customSettings(self, data):
+    if self.phase != 'instance':
+      Error(self, 'Settings can not be changed after preload method was called')
+      exit()
+    Note(self, 'Adding custom entries in program settings')
+    try: Settings.Custom
+    except: Settings.Custom = Namespace()
+    for key, val in data.items():
+      if type(val) == str: val = f'"{val}"'
+      exec(f'Settings.Custom.{key} = {val}')
+
   def updateSettings(self, data):
     if self.phase != 'instance':
       Error(self, 'Settings can not be changed after preload method was called')
