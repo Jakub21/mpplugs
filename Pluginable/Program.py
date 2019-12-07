@@ -80,8 +80,6 @@ class Program(LogIssuer):
     self.quit()
 
   def update(self):
-    for plugin in self.plugins.values():
-      mh.push(plugin.queue, StockEvent('Tick'))
     while not mh.empty(self.evntQueue):
       event = mh.pop(self.evntQueue)
       try: hndPlugins = self.evntHandlers[event.id]

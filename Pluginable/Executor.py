@@ -21,7 +21,6 @@ class Executor(LogIssuer):
     self.evntHandlers = Namespace(
       Config = [self.configure],
       Init = [self.initPlugin],
-      Tick = [self.tickPlugin],
       Quit = [self.quit],
       GlobalSettings = [self.setGlobalSettings],
     )
@@ -34,15 +33,12 @@ class Executor(LogIssuer):
   def updateLoop(self):
     while not self.quitting:
       quitStatus = mh.get(self.quitStatus)
-      # Warn(self, type(quitStatus), quitStatus)
       if quitStatus == 1: self.purgeTickEvents()
       elif quitStatus == 2: break
       while not mh.empty(self.plgnQueue):
         event = mh.pop(self.plgnQueue)
-        if event.id == 'Tick' and quitStatus: continue
         self.handleEvent(event)
-        if event.id == 'Tick': break
-    # TODO / NOTE: This method can be improved
+      self.tickPlugin()
 
   def handleEvent(self, event):
     try: handlers = self.evntHandlers[event.id]
@@ -57,6 +53,11 @@ class Executor(LogIssuer):
         ExecutorEvent(self, 'PluginError', critical=True, message=message,
           **excToKwargs(exc))
         self.quitting = True
+
+  def tickPlugin(self):
+    self.tpsMon.tick()
+    if self.tpsMon.newTpsReading: Debug(self, f'TPS = {self.tpsMon.tps}')
+    self.plugin.update()
 
   def quitProgram(self):
     ExecutorEvent(self, 'StopProgram')
@@ -80,11 +81,6 @@ class Executor(LogIssuer):
         Warn(self, f'Config error in {self.plugin.key}: path {path} does not exist')
       if type(value) == str: value = f'"{value}"'
       exec(f'self.plugin.cnf.{path} = {value}')
-
-  def tickPlugin(self, event):
-    self.tpsMon.tick()
-    if self.tpsMon.newTpsReading: Debug(self, f'TPS = {self.tpsMon.tps}')
-    self.plugin.update()
 
   def setGlobalSettings(self, event):
     data = event.data

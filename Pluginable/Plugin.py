@@ -8,10 +8,9 @@ class Plugin(LogIssuer):
     self.key = key
     self.setIssuerData('plugin', self.key)
     self.tick = 0
-    self.statusGetters = Namespace()
 
-  def addToStatus(self, key, getter):
-    self.statusGetters[key] = getter
+  def addToStatus(self, attr):
+    self.statusAttrs += [attr]
 
   def init(self):
     self.INITIALIZED = True
@@ -42,6 +41,6 @@ class Plugin(LogIssuer):
     PluginEvent(self, 'PluginError', critical=critical, message=message,
       name=name, info=info, traceback=traceback)
 
-  def pluginStatus(self):
-    PluginEvent(self, 'PluginStatus', tick=self.tick,
-      data=Namespace(**{k:v() for k, v in self.statusGetters.items()}))
+  def setPluginOutputs(self, **data):
+    PluginEvent(self, 'PluginStatus', pluginKey=self.key, tick=self.tick,
+      data=Namespace(**data))
