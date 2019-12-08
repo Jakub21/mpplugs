@@ -90,7 +90,6 @@ class Compiler(LogIssuer):
       exit()
 
     queue = self.prog.manager.Queue()
-    Info(self, Namespace(**self.prog.settings).toString())
     mh.push(queue, StockEvent('GlobalSettings', data=self.prog.settings))
     try:
       config = self.prog.pluginConfigs[pluginKey]
