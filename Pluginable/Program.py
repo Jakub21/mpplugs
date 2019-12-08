@@ -40,24 +40,23 @@ class Program(LogIssuer):
     try: Settings.Custom
     except: Settings.Custom = Namespace()
     for key, val in data.items():
-      if type(val) == str: val = f'"{val}"'
-      exec(f'Settings.Custom.{key} = {val}')
+      self.settings[f'Custom.{key}'] = val
 
   def updateSettings(self, data):
     if self.phase != 'instance':
       Error(self, 'Settings can not be changed after preload method was called')
       exit()
-    Note(self, 'Applying changes in settings')
-    self.settings = data
+    Note(self, 'Changing settings')
     delKeys = []
     for key, val in data.items():
-      try: eval(f'Settings.{key}')
+      try:
+        eval(f'Settings.{key}')
+        self.settings[key] = val
       except (KeyError, AttributeError):
-        Warn(self, f'Setting "{key}" does not exist')
-        delKeys += [key]
-        continue
-      if type(val) == str: val = f'"{val}"'
-      exec(f'Settings.{key} = {val}')
+        if not key.startswith('Custom.'):
+          Warn(self, f'Setting "{key}" does not exist')
+          delKeys += [key]
+          continue
     for key in delKeys:
       del data[key]
     self.settings['StartTime'] = Settings.StartTime
@@ -69,8 +68,12 @@ class Program(LogIssuer):
     self.pluginConfigs[pluginKey] = data
 
   def preload(self):
-    Info(self, f'Started at {Settings.StartTime}')
-    Note(self, 'Starting plugins preload')
+    for key, val in self.settings.items():
+      if type(val) == str: val = f'"{val}"'
+      elif type(val) == datetime:
+        val = f"datetime.strptime('{val}', '%Y-%m-%d %H:%M:%S.%f')"
+      exec(f'Settings.{key} = {val}')
+    Info(self, 'Starting plugins preload')
     self.compiler.compile()
     self.phase = 'preloaded'
 

@@ -54,5 +54,7 @@ from Pluginable.Logger import Debug, Info, Note, Warn, Error
     ErrorMessages = Namespace(
       dummy = 'Dummy error from {key}',
     ),
-  )
+  ),
+
+  Custom = Namespace(), # Fill with Program.customSettings
 )

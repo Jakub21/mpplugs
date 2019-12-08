@@ -13,7 +13,7 @@ class Plugin(LogIssuer):
     self.statusAttrs += [attr]
 
   def init(self):
-    self.INITIALIZED = True
+    pass
 
   def update(self):
     self.tick += 1

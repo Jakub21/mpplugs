@@ -13,6 +13,7 @@ class Executor(LogIssuer):
     self.setIssuerData('plugin', plugin.key)
     self.tpsMon = TpsMonitor(Settings.Kernel.MaxExecutorTicksPerSec)
     self.quitting = False
+    self.initialized = False
     self.plugin = plugin
     self.quitStatus = quitStatus
     self.plgnQueue = plgnQueue
@@ -38,7 +39,7 @@ class Executor(LogIssuer):
       while not mh.empty(self.plgnQueue):
         event = mh.pop(self.plgnQueue)
         self.handleEvent(event)
-      self.tickPlugin()
+      if self.initialized: self.tickPlugin()
 
   def handleEvent(self, event):
     try: handlers = self.evntHandlers[event.id]
@@ -56,7 +57,8 @@ class Executor(LogIssuer):
 
   def tickPlugin(self):
     self.tpsMon.tick()
-    if self.tpsMon.newTpsReading: Debug(self, f'TPS = {self.tpsMon.tps}')
+    if Settings.Logger.enablePluginTps:
+      if self.tpsMon.newTpsReading: Debug(self, f'TPS = {self.tpsMon.tps}')
     self.plugin.update()
 
   def quitProgram(self):
@@ -67,7 +69,9 @@ class Executor(LogIssuer):
 
   def initPlugin(self, event):
     Info(self, f'Starting plugin init')
-    try: self.plugin.init()
+    try:
+      self.plugin.init()
+      self.initialized = True
     except Exception as exc:
       message = 'An error occurred during plugin init'
       ExecutorEvent(self, 'PluginError', critical=True, message=message,
@@ -85,14 +89,11 @@ class Executor(LogIssuer):
   def setGlobalSettings(self, event):
     data = event.data
     for key, val in data.items():
-      try: eval(f'Settings.{key}')
-      except (KeyError, AttributeError):
-        Warn(self, f'Setting "{key}" does not exist')
-        continue
       if type(val) == str: val = f'"{val}"'
       elif type(val) == datetime:
         val = f"datetime.strptime('{val}', '%Y-%m-%d %H:%M:%S.%f')"
       exec(f'Settings.{key} = {val}')
+    # Info(self, Settings.toString())
 
   def purgeTickEvents(self):
     events = []
