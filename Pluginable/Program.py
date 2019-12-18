@@ -23,6 +23,7 @@ class Program(LogIssuer):
       'AddHandler': [self.addEvtHandler],
       'PluginError': [self.onError],
       'StopProgram': [self.quit],
+      'InitDoneState': [self.setInitDoneFlag],
     }
     self.noEvtHandlerWarns = []
     self.compiler = Compiler(self)
@@ -77,23 +78,19 @@ class Program(LogIssuer):
     self.compiler.compile()
     self.phase = 'preloaded'
 
-  def init(self):
-    Note(self, 'Starting program init')
-    self.compiler.load()
-    sleep(0.25)
-    Note(self, 'Program init complete')
-    self.phase = 'initialized'
-
   def run(self):
-    Info(self, 'Starting')
+    self.compiler.load()
+    Info(self, 'Starting program')
     self.phase = 'running'
     while not self.quitting:
-      try: self.update()
+      try:
+        self.handleAllEvents()
+        self.tpsMon.tick()
       except KeyboardInterrupt: break
       except: self.phase = 'exception'; raise
     self.quit()
 
-  def update(self):
+  def handleAllEvents(self):
     while not mh.empty(self.evntQueue):
       event = mh.pop(self.evntQueue)
       try: hndPlugins = self.evntHandlers[event.id]
@@ -136,6 +133,17 @@ class Program(LogIssuer):
   def addEvtHandler(self, event):
     try: self.evntHandlers[event.eventKey] += [event.plugin]
     except KeyError: self.evntHandlers[event.eventKey] = [event.plugin]
+
+  def setInitDoneFlag(self, event):
+    plugin = self.plugins[event.pluginKey]
+    plugin.initDone = event.state
+    allDone = True
+    for plugin in self.plugins.values():
+      if not plugin.initDone: allDone = False; break
+    if allDone:
+      Warn(self, f'All plugins initialized')
+      for plugin in self.plugins.values():
+        mh.push(plugin.queue, StockEvent('ProgramInitDone'))
 
   def onError(self, event):
     prefix = ['PluginReset', 'Critical'][event.critical]

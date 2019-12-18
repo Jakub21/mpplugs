@@ -10,6 +10,7 @@ Settings = Namespace(
   Kernel = Namespace(
     MaxProgramTicksPerSec = 128,
     MaxExecutorTicksPerSec = 128,
+    PluginAwaitProgramInit = True,
   ),
 
   Compiler = Namespace(

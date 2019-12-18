@@ -14,6 +14,7 @@ class Executor(LogIssuer):
     self.tpsMon = TpsMonitor(Settings.Kernel.MaxExecutorTicksPerSec)
     self.quitting = False
     self.initialized = False
+    self.programInitDone = False
     self.plugin = plugin
     self.quitStatus = quitStatus
     self.plgnQueue = plgnQueue
@@ -24,6 +25,7 @@ class Executor(LogIssuer):
       Init = [self.initPlugin],
       Quit = [self.quit],
       GlobalSettings = [self.setGlobalSettings],
+      ProgramInitDone = [self.setProgramInit]
     )
     self.errorMsgs = Namespace(
       cnfg = f'Plugin configuration error ({plugin.key})',
@@ -33,13 +35,14 @@ class Executor(LogIssuer):
 
   def updateLoop(self):
     while not self.quitting:
-      quitStatus = mh.get(self.quitStatus)
-      if quitStatus == 1: self.purgeTickEvents()
-      elif quitStatus == 2: break
+      if mh.get(self.quitStatus): break
       while not mh.empty(self.plgnQueue):
         event = mh.pop(self.plgnQueue)
         self.handleEvent(event)
-      if self.initialized: self.tickPlugin()
+      if self.initialized:
+        if self.programInitDone or not Settings.Kernel.PluginAwaitProgramInit:
+          self.tickPlugin()
+      self.tpsMon.tick()
 
   def handleEvent(self, event):
     try: handlers = self.evntHandlers[event.id]
@@ -56,7 +59,6 @@ class Executor(LogIssuer):
         self.quitting = True
 
   def tickPlugin(self):
-    self.tpsMon.tick()
     if Settings.Logger.enablePluginTps:
       if self.tpsMon.newTpsReading: Debug(self, f'TPS = {self.tpsMon.tps}')
     self.plugin.update()
@@ -68,7 +70,7 @@ class Executor(LogIssuer):
   # Internal event handlers
 
   def initPlugin(self, event):
-    Info(self, f'Starting plugin init')
+    Info(self, f'Plugin init starts')
     try:
       self.plugin.init()
       self.initialized = True
@@ -77,6 +79,8 @@ class Executor(LogIssuer):
       ExecutorEvent(self, 'PluginError', critical=True, message=message,
         **excToKwargs(exc))
       self.quitting = True
+    ExecutorEvent(self, 'InitDoneState', pluginKey=self.plugin.key, state=True)
+    Info(self, f'Plugin init done')
 
   def configure(self, event):
     for path, value in event.data.items():
@@ -93,15 +97,9 @@ class Executor(LogIssuer):
       elif type(val) == datetime:
         val = f"datetime.strptime('{val}', '%Y-%m-%d %H:%M:%S.%f')"
       exec(f'Settings.{key} = {val}')
-    # Info(self, Settings.toString())
 
-  def purgeTickEvents(self):
-    events = []
-    while not mh.empty(self.plgnQueue):
-      events += [mh.pop(self.plgnQueue)]
-    events = [evt for evt in events if evt.id != 'tick']
-    for evt in events:
-      mh.push(self.plgnQueue, evt)
+  def setProgramInit(self, event):
+    self.programInitDone = True
 
   def quit(self, event=None):
     self.quitting = True
