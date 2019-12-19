@@ -1,10 +1,8 @@
 
 class Namespace:
   '''Converts dictionaries to namespaces'''
-  def __init__(self, className=None, **data):
+  def __init__(self, **data):
     self.__dict__.update(data)
-    if className is not None:
-      self.__NSclassName__ = className
 
   @classmethod
   def fromDict(cls, input_dict):
@@ -48,7 +46,7 @@ class Namespace:
         x = '"'+x+'"'
       return str(x)
     def convertDict(x):
-      return Namespace(x).toString(self.__repr_indent__+1, 'dict')
+      return Namespace(**x).toString(self.__repr_indent__+1, 'dict')
     def convertList(x):
       if len(x) == 0: return '[]'
       else:
