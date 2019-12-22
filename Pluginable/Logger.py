@@ -22,6 +22,7 @@ def _getTime():
 
 def _format(data, output, level, *message):
   message = ' '.join([str(elm) for elm in message])
+  if level == 'error': message += '\n'
   time = _getTime()
   if not output.colored:
     return f'{time} <{data.type}:{data.path}> {message}\n'
