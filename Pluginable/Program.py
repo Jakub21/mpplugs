@@ -120,7 +120,7 @@ class Program(LogIssuer):
       else:
         mh.set(plugin.quitStatus, 1)
         mh.push(plugin.queue, StockEvent('Quit'))
-    sleep(0.3)
+    sleep(Settings.Kernel.MaxPluginCleanupDuration)
     for key, plugin in self.plugins.items():
       plugin.proc.join()
     # working directory cleanup

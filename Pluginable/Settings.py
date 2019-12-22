@@ -11,6 +11,7 @@ Settings = Namespace(
     MaxProgramTicksPerSec = 128,
     MaxExecutorTicksPerSec = 128,
     PluginAwaitProgramInit = True,
+    MaxPluginCleanupDuration = 0.3,
   ),
 
   Compiler = Namespace(
