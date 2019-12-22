@@ -80,7 +80,7 @@ class Program(LogIssuer):
 
   def run(self):
     self.compiler.load()
-    Info(self, 'Starting program')
+    Note(self, 'Starting program')
     self.phase = 'running'
     while not self.quitting:
       try:
@@ -137,13 +137,16 @@ class Program(LogIssuer):
   def setInitDoneFlag(self, event):
     plugin = self.plugins[event.pluginKey]
     plugin.initDone = event.state
+    plugin.inputNodes = event.nodes
     allDone = True
+    allNodes = {}
     for plugin in self.plugins.values():
       if not plugin.initDone: allDone = False; break
+      allNodes.update(plugin.inputNodes)
     if allDone:
-      Warn(self, f'All plugins initialized')
+      Note(self, f'All plugins initialized')
       for plugin in self.plugins.values():
-        mh.push(plugin.queue, StockEvent('ProgramInitDone'))
+        mh.push(plugin.queue, StockEvent('ProgramInitDone', nodes=allNodes))
 
   def onError(self, event):
     prefix = ['PluginReset', 'Critical'][event.critical]

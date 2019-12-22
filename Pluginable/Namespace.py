@@ -38,6 +38,7 @@ class Namespace:
 
   # in some applications this would be better if renamed to __repr__
   def toString(self, indent=0, className='Namespace'):
+    indentWidth = 2
     if className != 'dict': className = f'<{className}>'
     result = className + ' {\n'
     self.__repr_indent__ = indent
@@ -52,8 +53,8 @@ class Namespace:
       else:
         self.__repr_indent__ += 1
         r = '['
-        for xx in x: r += '\n' + ' '*4*(self.__repr_indent__+1) + choice(xx)
-        r += '\n'+' '*4*self.__repr_indent__+']\n'
+        for xx in x: r += '\n' + ' '*indentWidth*(self.__repr_indent__+1) + choice(xx)
+        r += '\n'+' '*indentWidth*self.__repr_indent__+']\n'
         self.__repr_indent__ -= 1
         return r
     def convertObject(x):
@@ -73,7 +74,7 @@ class Namespace:
         return convertClass(x)
     for k, v in self.__dict__.items():
       if k == '__repr_indent__': continue
-      result += ' '*4*(self.__repr_indent__+1) + str(k) + ': ' + str(choice(v)) + '\n'
-    result += ' '*4*self.__repr_indent__ + '}'
+      result += ' '*indentWidth*(self.__repr_indent__+1) + str(k) + ': ' + str(choice(v)) + '\n'
+    result += ' '*indentWidth*self.__repr_indent__ + '}'
     del self.__repr_indent__
     return result

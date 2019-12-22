@@ -100,7 +100,7 @@ class Compiler(LogIssuer):
     proc = mpr.Process(target=runPlugin, args=[instance, quitStatus, queue,
       self.prog.evntQueue])
     proc.start()
-    pluginData = Namespace(key=pluginKey, proc=proc, queue=queue, quitStatus=quitStatus, initDone=False)
+    pluginData = Namespace(key=pluginKey, proc=proc, queue=queue, quitStatus=quitStatus, initDone=False, inputNodes={})
     self.prog.plugins[pluginKey] = pluginData
 
   def removeTemp(self):

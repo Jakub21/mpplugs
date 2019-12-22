@@ -20,6 +20,7 @@ class Executor(LogIssuer):
     self.plgnQueue = plgnQueue
     self.evntQueue = evntQueue
     self.plugin.executor = self
+    self.inputNodes = Namespace()
     self.evntHandlers = Namespace(
       Config = [self.configure],
       Init = [self.initPlugin],
@@ -79,7 +80,10 @@ class Executor(LogIssuer):
       ExecutorEvent(self, 'PluginError', critical=True, message=message,
         **excToKwargs(exc))
       self.quitting = True
-    ExecutorEvent(self, 'InitDoneState', pluginKey=self.plugin.key, state=True)
+    bareNodes = {key:{k:v for k,v in node.items() if k != 'handler'} for
+      key, node in self.inputNodes.items()}
+    ExecutorEvent(self, 'InitDoneState', pluginKey=self.plugin.key, state=True,
+      nodes=bareNodes)
     Info(self, f'Plugin init done')
 
   def configure(self, event):
@@ -100,6 +104,11 @@ class Executor(LogIssuer):
 
   def setProgramInit(self, event):
     self.programInitDone = True
+    try:
+      pluginHandler = self.plugin.onProgramInit
+      Info(self, 'Executing on-program-init method')
+    except AttributeError: return
+    pluginHandler(event)
 
   def quit(self, event=None):
     self.quitting = True

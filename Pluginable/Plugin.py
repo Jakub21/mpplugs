@@ -26,6 +26,12 @@ class Plugin(LogIssuer):
 
   # Stock events
 
+  def addInputNode(self, key, handler, *paramKeys):
+    node = Namespace(owner=self.key, key=key, paramKeys=list(paramKeys),
+      handler=handler)
+    self.executor.inputNodes[key] = node
+    self.executor.evntHandlers[f'$_{self.key}_{key}'] = [handler]
+
   def addEventHandler(self, eventKey, handler):
     try: self.executor.evntHandlers[eventKey] += [handler]
     except: self.executor.evntHandlers[eventKey] = [handler]
