@@ -142,7 +142,7 @@ class Program(LogIssuer):
     allNodes = {}
     for plugin in self.plugins.values():
       if not plugin.initDone: allDone = False; break
-      allNodes.update(plugin.inputNodes)
+      allNodes.update({f'{plugin.key}_{k}':v for k,v in plugin.inputNodes.items()})
     if allDone:
       Note(self, f'All plugins initialized')
       for plugin in self.plugins.values():

@@ -30,7 +30,7 @@ class Plugin(LogIssuer):
     node = Namespace(owner=self.key, key=key, paramKeys=list(paramKeys),
       handler=handler)
     self.executor.inputNodes[key] = node
-    self.executor.evntHandlers[f'$_{self.key}_{key}'] = [handler]
+    self.addEventHandler(f'$_{self.key}_{key}', handler)
 
   def addEventHandler(self, eventKey, handler):
     try: self.executor.evntHandlers[eventKey] += [handler]

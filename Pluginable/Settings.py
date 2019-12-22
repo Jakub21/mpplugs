@@ -20,7 +20,8 @@ Settings = Namespace(
     data = Namespace(
       compilationPrefix = '''
 # File compiled by pluginable, any edits will be automatically overwritten
-from Pluginable import Plugin, Event, Settings, Namespace
+from Pluginable import Plugin, Settings, Namespace
+from Pluginable import PluginEvent as Event
 from Pluginable.Logger import Debug, Info, Note, Warn, Error
 
 # Plugin code
