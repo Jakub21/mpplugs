@@ -101,6 +101,7 @@ class Executor(LogIssuer):
       elif type(val) == datetime:
         val = f"datetime.strptime('{val}', '%Y-%m-%d %H:%M:%S.%f')"
       exec(f'Settings.{key} = {val}')
+    self.tpsMon.setTarget(Settings.Kernel.MaxExecutorTicksPerSec)
 
   def setProgramInit(self, event):
     self.programInitDone = True

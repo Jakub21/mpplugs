@@ -76,6 +76,7 @@ class Program(LogIssuer):
       exec(f'Settings.{key} = {val}')
     Info(self, 'Starting plugins preload')
     self.compiler.compile()
+    self.tpsMon.setTarget(Settings.Kernel.MaxProgramTicksPerSec)
     self.phase = 'preloaded'
 
   def run(self):

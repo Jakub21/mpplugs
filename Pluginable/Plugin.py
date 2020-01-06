@@ -1,4 +1,5 @@
 from Pluginable.Logger import *
+from Pluginable.Settings import Settings
 from Pluginable.Namespace import Namespace
 from Pluginable.Event import PluginEvent
 from traceback import format_tb
@@ -48,5 +49,7 @@ class Plugin(LogIssuer):
       name=name, info=info, traceback=traceback)
 
   def setPluginOutputs(self, **data):
+    if Settings.Kernel.AutoAddTpsToPluginOutputs:
+      data['TPS'] = self.executor.tpsMon.tps
     PluginEvent(self, 'PluginStatus', pluginKey=self.key, tick=self.tick,
       data=Namespace(**data))

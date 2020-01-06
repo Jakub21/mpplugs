@@ -11,6 +11,9 @@ class TpsMonitor:
     self.lastSecond = -1
     self.bilance = 0
 
+  def setTarget(self, tps):
+    self.target = 1e6 / tps
+
   def tick(self):
     self.newTpsReading = False
     self.ticks += 1
