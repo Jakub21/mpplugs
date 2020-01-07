@@ -6,7 +6,8 @@ from Pluginable.Logger import *
 from Pluginable.Settings import Settings
 from Pluginable.Namespace import Namespace
 from Pluginable.FileManager import ifnmkdir, rmtree
-from Pluginable.Event import StockEvent
+from Pluginable.Event import KernelEvent
+from Pluginable.Exceptions import *
 import Pluginable.MultiHandler as mh
 
 class Compiler(LogIssuer):
@@ -23,8 +24,7 @@ class Compiler(LogIssuer):
     for path in self.directories:
       try: keys = [d for d in next(os.walk(path))[1] if not d.startswith('__')]
       except StopIteration:
-        Error(self, f'Can not compile plugins, directory "{path}" does not exist')
-        exit()
+        raise CompilerNoDirectoryError(path) from None
       total = len(keys)
       for index, pluginKey in enumerate(keys):
         if pluginKey in self.pluginsToOmit: continue
@@ -33,6 +33,9 @@ class Compiler(LogIssuer):
 
   def compilePlugin(self, directory, pluginKey):
     baseDir = f'{directory}/{pluginKey}'
+    try: next(os.walk(baseDir))
+    except:
+      raise CompilerNoDirectoryError(baseDir) from None
     scopeFile = f'{baseDir}/Scope.py'
     configFile = f'{baseDir}/Config.py'
     pluginFile = f'{baseDir}/{pluginKey}.py'
@@ -52,7 +55,10 @@ class Compiler(LogIssuer):
     f = open(target, 'a', newline='\n')
     f.write(Settings.Compiler.data.compilationPrefix)
     for chunk in [scopeFile, configFile] + helperFiles + taskFiles + [pluginFile]:
-      f.write(open(chunk).read())
+      try: f.write(open(chunk).read())
+      except FileNotFoundError:
+        f.close()
+        raise CompilerMissingFileError(chunk) from None
     f.close()
 
   def load(self):
@@ -60,8 +66,7 @@ class Compiler(LogIssuer):
     plugins = []
     try: files = [f for f in next(os.walk(self.target))[2] if f.endswith('.py')]
     except StopIteration:
-      Error(self, 'No plugin directories added (Settings.Compiler.pluginDirectories)')
-      exit()
+      raise CompilerNoDirsAddedError() from None
     total = len(files)
     for index, filename in enumerate(files):
       pluginKey = filename[:-3]
@@ -73,8 +78,7 @@ class Compiler(LogIssuer):
 
     try: PluginClass = eval(f'plugin.{pluginKey}')
     except AttributeError:
-      Error(self, f'[{pluginKey}] Main plugin class not found')
-      exit()
+      raise CompilerSyntaxError(pluginKey, pluginKey) from None
     instance = PluginClass(pluginKey)
 
     instance.tasks = Namespace()
@@ -86,16 +90,15 @@ class Compiler(LogIssuer):
         instance.tasks[k[1:]] = task
     try: instance.cnf = eval('plugin.Config')
     except AttributeError:
-      Error(self, f'[{pluginKey}] Config class not found')
-      exit()
+      raise CompilerSyntaxError(pluginKey, 'Config') from None
 
     queue = self.prog.manager.Queue()
-    mh.push(queue, StockEvent('GlobalSettings', data=self.prog.settings))
+    mh.push(queue, KernelEvent('GlobalSettings', data=self.prog.settings))
     try:
       config = self.prog.pluginConfigs[pluginKey]
-      mh.push(queue, StockEvent('Config', data=config))
+      mh.push(queue, KernelEvent('Config', data=config))
     except KeyError: pass # No changes in plugin config
-    mh.push(queue, StockEvent('Init'))
+    mh.push(queue, KernelEvent('Init'))
     quitStatus = self.prog.manager.Value('i', 0)
     proc = mpr.Process(target=runPlugin, args=[instance, quitStatus, queue,
       self.prog.evntQueue])

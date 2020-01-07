@@ -1,4 +1,5 @@
 import Pluginable.MultiHandler as mh
+from traceback import format_tb
 
 class Event:
   def __init__(self, issuer, id, **data):
@@ -13,10 +14,24 @@ class Event:
     args = ', '.join([f'{k}={v}' for k, v in self.getArgs().items()])
     return f'<Event "{self.id}" {{{args}}}>'
 
+class ErrorEvent:
+  @staticmethod
+  def exceptionToDict(exception):
+    return {
+      'name': exception.__class__.__name__,
+      'info': exception.args[0],
+      'traceback': ''.join(format_tb(exception.__traceback__))
+    }
 
-class StockEvent(Event):
+
+class KernelEvent(Event):
   def __init__(self, id, **kwargs):
     super().__init__('_Kernel_', id, **kwargs)
+
+class KernelExcEvent(KernelEvent, ErrorEvent):
+  def __init__(self, critical, exception):
+    super().__init__('KernelError', critical=critical,
+      **self.exceptionToDict(exception))
 
 
 class ExecutorEvent(Event):
@@ -24,8 +39,18 @@ class ExecutorEvent(Event):
     super().__init__(issuer.plugin.key, id, **kwargs)
     mh.push(issuer.evntQueue, self)
 
+class ExecutorExcEvent(ExecutorEvent, ErrorEvent):
+  def __init__(self, issuer, critical, exception):
+    super().__init__(issuer, 'PluginError', critical=critical,
+      **self.exceptionToDict(exception))
+
 
 class PluginEvent(Event):
   def __init__(self, issuer, id, **kwargs):
     super().__init__(issuer.key, id, **kwargs)
     mh.push(issuer.executor.evntQueue, self)
+
+class PluginExcEvent(PluginEvent, ErrorEvent):
+  def __init__(self, issuer, critical, exception):
+    super().__init__(issuer, 'PluginError', critical=critical,
+      **self.exceptionToDict(exception))

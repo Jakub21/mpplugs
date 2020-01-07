@@ -1,7 +1,8 @@
 from Pluginable.Settings import Settings
 from Pluginable.Namespace import Namespace
 from Pluginable.Logger import *
-from Pluginable.Event import StockEvent
+from Pluginable.Exceptions import *
+from Pluginable.Event import *
 from Pluginable.Compiler import Compiler
 from Pluginable.FileManager import CleanPyCache
 from Pluginable.TpsMonitor import TpsMonitor
@@ -74,13 +75,16 @@ class Program(LogIssuer):
       elif type(val) == datetime:
         val = f"datetime.strptime('{val}', '%Y-%m-%d %H:%M:%S.%f')"
       exec(f'Settings.{key} = {val}')
-    Info(self, 'Starting plugins preload')
-    self.compiler.compile()
+    try: self.compiler.compile()
+    except CompilerError as exc:
+      self.onError(KernelExcEvent(True, exc))
+      exit()
     self.tpsMon.setTarget(Settings.Kernel.MaxProgramTicksPerSec)
     self.phase = 'preloaded'
 
   def run(self):
-    self.compiler.load()
+    try: self.compiler.load()
+    except CompilerError as exc: self.onError(KernelExcEvent(True, exc))
     Note(self, 'Starting program')
     self.phase = 'running'
     while not self.quitting:
@@ -111,7 +115,7 @@ class Program(LogIssuer):
 
   def quit(self, event=None):
     # set program flags
-    if self.phase == 'quitting': return
+    if self.phase == 'quitting' or self.quitting: return
     if self.phase != 'exception': self.phase = 'quitting'
     Note(self, 'Starting cleanup')
     self.quitting = True
@@ -120,7 +124,7 @@ class Program(LogIssuer):
       if self.phase == 'exception': mh.set(plugin.quitStatus, 2)
       else:
         mh.set(plugin.quitStatus, 1)
-        mh.push(plugin.queue, StockEvent('Quit'))
+        mh.push(plugin.queue, KernelEvent('Quit'))
     sleep(Settings.Kernel.MaxPluginCleanupDuration)
     for key, plugin in self.plugins.items():
       plugin.proc.join()
@@ -147,11 +151,11 @@ class Program(LogIssuer):
     if allDone:
       Note(self, f'All plugins initialized')
       for plugin in self.plugins.values():
-        mh.push(plugin.queue, StockEvent('ProgramInitDone', nodes=allNodes))
+        mh.push(plugin.queue, KernelEvent('ProgramInitDone', nodes=allNodes))
 
   def onError(self, event):
     prefix = ['PluginReset', 'Critical'][event.critical]
-    Error(self, f'{prefix}: {event.message}\n' + event.traceback + \
+    Error(self, f'{prefix}: {event.name}\n' + event.traceback + \
       f'{event.name}: {event.info}')
     self.phase = 'exception'
     if event.critical: self.quit()

@@ -1,10 +1,10 @@
 from datetime import datetime
 import multiprocessing as mpr
-from traceback import format_tb
+from Pluginable.Exceptions import *
 from Pluginable.Settings import Settings
 from Pluginable.Logger import *
 from Pluginable.Namespace import Namespace
-from Pluginable.Event import ExecutorEvent
+from Pluginable.Event import *
 from Pluginable.TpsMonitor import TpsMonitor
 import Pluginable.MultiHandler as mh
 
@@ -28,11 +28,7 @@ class Executor(LogIssuer):
       GlobalSettings = [self.setGlobalSettings],
       ProgramInitDone = [self.setProgramInit]
     )
-    self.errorMsgs = Namespace(
-      cnfg = f'Plugin configuration error ({plugin.key})',
-      tick = f'Plugin tick error ({plugin.key})',
-      quit = f'Plugin cleanup error ({plugin.key})',
-    )
+    self.criticalExceptions = ['Init', 'Config']
 
   def updateLoop(self):
     while not self.quitting:
@@ -53,16 +49,17 @@ class Executor(LogIssuer):
     for handler in handlers:
       try: handler(event)
       except Exception as exc:
-        message = self.errorMsgs[event.id] if event.id in self.errorMsgs.keys()\
-          else f'An error occurred while handling event "{event.id}"'
-        ExecutorEvent(self, 'PluginError', critical=True, message=message,
-          **excToKwargs(exc))
-        self.quitting = True
+        critical = event.id in self.criticalExceptions
+        ExecutorExcEvent(self, critical, exc)
+        self.quitting = critical or self.quitting
 
   def tickPlugin(self):
     if Settings.Logger.enablePluginTps:
       if self.tpsMon.newTpsReading: Debug(self, f'TPS = {self.tpsMon.tps}')
-    self.plugin.update()
+    try: self.plugin.update()
+    except Exception as exc:
+      Error(self, f'An error occurred during tick of plugin {self.plugin.key}')
+      ExecutorExcEvent(self, True, exc)
 
   def quitProgram(self):
     ExecutorEvent(self, 'StopProgram')
@@ -76,10 +73,8 @@ class Executor(LogIssuer):
       self.plugin.init()
       self.initialized = True
     except Exception as exc:
-      message = 'An error occurred during plugin init'
-      ExecutorEvent(self, 'PluginError', critical=True, message=message,
-        **excToKwargs(exc))
-      self.quitting = True
+      Error(self, f'An error occurred during init of plugin {self.plugin.key}')
+      raise
     bareNodes = {key:{k:v for k,v in node.items() if k != 'handler'} for
       key, node in self.inputNodes.items()}
     ExecutorEvent(self, 'InitDoneState', pluginKey=self.plugin.key, state=True,
@@ -90,7 +85,7 @@ class Executor(LogIssuer):
     for path, value in event.data.items():
       try: eval(f'self.plugin.cnf.{path}')
       except AttributeError:
-        Warn(self, f'Config error in {self.plugin.key}: path {path} does not exist')
+        raise PluginConfigError(self.plugin.key, path)
       if type(value) == str: value = f'"{value}"'
       exec(f'self.plugin.cnf.{path} = {value}')
 
@@ -121,9 +116,3 @@ def runPlugin(plugin, quitStatus, plgnQueue, evntQueue):
   try: executor.updateLoop()
   except KeyboardInterrupt:
     executor.quitProgram()
-
-def excToKwargs(exception):
-  name = exception.__class__.__name__
-  info = exception.args[0]
-  traceback = ''.join(format_tb(exception.__traceback__))
-  return {'name':name, 'info':info, 'traceback':traceback}
