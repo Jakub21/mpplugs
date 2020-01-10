@@ -155,7 +155,10 @@ class Program(LogIssuer):
 
   def onError(self, event):
     prefix = ['PluginReset', 'Critical'][event.critical]
-    Error(self, f'{prefix}: {event.name}\n' + event.traceback + \
-      f'{event.name}: {event.info}')
+    if event.noTraceback:
+      Error(self, f'{prefix}: {event.name}: {event.info}')
+    else:
+      Error(self, f'{prefix}: {event.name}' + event.traceback + \
+        f'{event.name}: {event.info}')
     self.phase = 'exception'
     if event.critical: self.quit()

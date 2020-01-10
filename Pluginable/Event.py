@@ -17,10 +17,13 @@ class Event:
 class ErrorEvent:
   @staticmethod
   def exceptionToDict(exception):
+    try: noTraceback = exception.noTraceback
+    except AttributeError: noTraceback = False
     return {
       'name': exception.__class__.__name__,
       'info': exception.args[0],
-      'traceback': ''.join(format_tb(exception.__traceback__))
+      'traceback': ''.join(format_tb(exception.__traceback__)),
+      'noTraceback': noTraceback,
     }
 
 

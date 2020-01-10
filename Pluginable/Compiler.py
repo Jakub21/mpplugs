@@ -74,11 +74,13 @@ class Compiler(LogIssuer):
       self.loadPlugin(pluginKey)
 
   def loadPlugin(self, pluginKey):
-    exec(f'from {self.target} import {pluginKey} as plugin')
+    try: exec(f'from {self.target} import {pluginKey} as plugin')
+    except SyntaxError as exc:
+      raise CompilerSyntaxError(pluginKey, exc)
 
     try: PluginClass = eval(f'plugin.{pluginKey}')
     except AttributeError:
-      raise CompilerSyntaxError(pluginKey, pluginKey) from None
+      raise CompilerMissingClassError(pluginKey, pluginKey) from None
     instance = PluginClass(pluginKey)
 
     instance.tasks = Namespace()
@@ -90,7 +92,7 @@ class Compiler(LogIssuer):
         instance.tasks[k[1:]] = task
     try: instance.cnf = eval('plugin.Config')
     except AttributeError:
-      raise CompilerSyntaxError(pluginKey, 'Config') from None
+      raise CompilerMissingClassError(pluginKey, 'Config') from None
 
     queue = self.prog.manager.Queue()
     mh.push(queue, KernelEvent('GlobalSettings', data=self.prog.settings))
