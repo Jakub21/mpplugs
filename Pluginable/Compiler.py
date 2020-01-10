@@ -52,14 +52,31 @@ class Compiler(LogIssuer):
     ifnmkdir(self.target)
     open(target, 'w+').close()
 
+    sourceFileLines = [('_prefix_', \
+      Settings.Compiler.data.compilationPrefix.count('\n'))]
     f = open(target, 'a', newline='\n')
     f.write(Settings.Compiler.data.compilationPrefix)
-    for chunk in [scopeFile, configFile] + helperFiles + taskFiles + [pluginFile]:
-      try: f.write(open(chunk).read())
+    filesOrdered = [
+      ('Scope.py', scopeFile), ('Config.py', configFile),
+      *[(x.split('/')[-1], x) for x in helperFiles],
+      *[(x.split('/')[-1], x) for x in taskFiles],
+      (f'{pluginKey}.py', pluginFile),
+    ]
+    for name, chunk in filesOrdered:
+      try:
+        code = open(chunk).read()
+        f.write(code)
+        sourceFileLines += [(name, code.count('\n'))]
       except FileNotFoundError:
         f.close()
         raise CompilerMissingFileError(chunk) from None
     f.close()
+    pluginData = Namespace(key=pluginKey,
+      directory = directory,
+      loaded = False,
+      sourceFileLines = sourceFileLines,
+    )
+    self.prog.plugins[pluginKey] = pluginData
 
   def load(self):
     Note(self, 'Loading plugins')
@@ -76,7 +93,7 @@ class Compiler(LogIssuer):
   def loadPlugin(self, pluginKey):
     try: exec(f'from {self.target} import {pluginKey} as plugin')
     except SyntaxError as exc:
-      raise CompilerSyntaxError(pluginKey, exc)
+      raise CompilerSyntaxError(self.prog.plugins[pluginKey], exc)
 
     try: PluginClass = eval(f'plugin.{pluginKey}')
     except AttributeError:
@@ -105,8 +122,12 @@ class Compiler(LogIssuer):
     proc = mpr.Process(target=runPlugin, args=[instance, quitStatus, queue,
       self.prog.evntQueue])
     proc.start()
-    pluginData = Namespace(key=pluginKey, proc=proc, queue=queue, quitStatus=quitStatus, initDone=False, inputNodes={})
-    self.prog.plugins[pluginKey] = pluginData
+    self.prog.plugins[pluginKey].proc = proc
+    self.prog.plugins[pluginKey].queue = queue
+    self.prog.plugins[pluginKey].quitStatus = quitStatus
+    self.prog.plugins[pluginKey].initDone = False
+    self.prog.plugins[pluginKey].inputNodes = {}
+    self.prog.plugins[pluginKey].loaded = True
 
   def removeTemp(self):
     try: rmtree(self.target)

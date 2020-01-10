@@ -21,12 +21,17 @@ class CompilerMissingClassError(CompilerError):
     super().__init__(f'Failed to find class "{className}" in plugin {pluginKey}')
 
 class CompilerSyntaxError(CompilerError):
-  def __init__(self, pluginKey, original):
-    info = original.args[1]
-    info = Namespace(file=info[0], lineno=info[1], offset=info[2], code=info[3])
+  def __init__(self, pluginData, original):
+    pluginKey = pluginData.key
+    offset, code = original.args[1][2], original.args[1][3]
+    lineno = original.args[1][1]
+    for fileName, fileLines in pluginData.sourceFileLines:
+      if lineno <= fileLines: break
+      lineno -= fileLines
+    file = f'{pluginData.directory}/{pluginKey}/{fileName}'
     super().__init__(f'There is a syntax error in plugin {pluginKey}\n' +\
-      f'  File "{info.file}", line {info.lineno}\n    {info.code}   '+\
-      ' '*info.offset+f'^\nSyntaxError: invalid syntax')
+      f'  File "{file}", line {lineno}\n    {code}   '+\
+      ' '*offset+f'^\nSyntaxError: invalid syntax')
     self.noTraceback = True
 
 # Plugin / Executor

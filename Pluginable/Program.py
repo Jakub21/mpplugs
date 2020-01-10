@@ -121,12 +121,14 @@ class Program(LogIssuer):
     self.quitting = True
     # quit plugins
     for key, plugin in self.plugins.items():
+      if not plugin.loaded: continue
       if self.phase == 'exception': mh.set(plugin.quitStatus, 2)
       else:
         mh.set(plugin.quitStatus, 1)
         mh.push(plugin.queue, KernelEvent('Quit'))
     sleep(Settings.Kernel.MaxPluginCleanupDuration)
     for key, plugin in self.plugins.items():
+      if not plugin.loaded: continue
       plugin.proc.join()
     # working directory cleanup
     Info(self, 'Deleting temporary files')
