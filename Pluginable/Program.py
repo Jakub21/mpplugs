@@ -76,7 +76,7 @@ class Program(LogIssuer):
         val = f"datetime.strptime('{val}', '%Y-%m-%d %H:%M:%S.%f')"
       exec(f'Settings.{key} = {val}')
     try: self.compiler.compile()
-    except CompilerError as exc:
+    except (CompilerError, PluginStartupError) as exc:
       self.onError(KernelExcEvent(True, exc))
       exit()
     self.tpsMon.setTarget(Settings.Kernel.MaxProgramTicksPerSec)
@@ -84,7 +84,7 @@ class Program(LogIssuer):
 
   def run(self):
     try: self.compiler.load()
-    except CompilerError as exc: self.onError(KernelExcEvent(True, exc))
+    except Exception as exc: self.onError(KernelExcEvent(True, exc))
     Note(self, 'Starting program')
     self.phase = 'running'
     while not self.quitting:
@@ -156,11 +156,7 @@ class Program(LogIssuer):
         mh.push(plugin.queue, KernelEvent('ProgramInitDone', nodes=allNodes))
 
   def onError(self, event):
-    prefix = ['PluginReset', 'Critical'][event.critical]
-    if event.noTraceback:
-      Error(self, f'{prefix}: {event.name}: {event.info}')
-    else:
-      Error(self, f'{prefix}: {event.name}' + event.traceback + \
-        f'{event.name}: {event.info}')
+    prefix = ['Insignificant', 'Critical'][event.critical]
+    Error(self, f'({prefix}) {event.name}: {event.info}')
     self.phase = 'exception'
     if event.critical: self.quit()

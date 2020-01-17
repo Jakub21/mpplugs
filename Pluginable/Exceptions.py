@@ -1,8 +1,16 @@
 from Pluginable.Namespace import Namespace
+from traceback import format_tb
+
+class PluginableException(Exception):
+  def __init__(self, *args, **kwargs):
+    super().__init__(*args, **kwargs)
+    self.name = self.__class__.__name__
+    self.info = self.args[0]
 
 # Compiler
 
-class CompilerError(Exception): pass
+class CompilerError(PluginableException):
+  pass
 
 class CompilerNoDirectoryError(CompilerError):
   def __init__(self, path):
@@ -20,27 +28,86 @@ class CompilerMissingClassError(CompilerError):
   def __init__(self, pluginKey, className):
     super().__init__(f'Failed to find class "{className}" in plugin {pluginKey}')
 
-class CompilerSyntaxError(CompilerError):
+
+# Plugin
+
+class PluginError(PluginableException):
+  def __init__(self, pluginData, original, message, lineNo=None, msg=None,
+      offset=None, lineCode=None, includeLocation=True, includeFunction=True,
+      includeOrig=False):
+    formatDict = pluginData.__dict__
+    # Parsing traceback
+    traceback = ''.join(format_tb(original.__traceback__))
+    tracebackFileLines = [l for l in traceback.split('\n') if '  File "' in l]
+    locationLine = [l for l in traceback.split('\n') if '  File "' in l][-1]
+    fullFilePath = locationLine.split('"')[1]
+    # Getting original function name from TB
+    functionName = locationLine.replace(fullFilePath, '').split()[5]
+    formatDict['functionName'] = functionName
+    # Getting original line number from TB
+    if lineNo is None:
+      lineNo = int(locationLine.replace(fullFilePath, '').split()[3][:-1])
+    # Getting original message from TB
+    if msg is None:
+      msg = original.__class__.__name__ + ': ' + str(original.args)
+    formatDict['origMssg'] = msg
+    formatDict['origName'] = original.__class__.__name__
+    formatDict['origArgs'] = " | ".join([str(x) for x in original.args])
+    # Finding real file name and line number
+    line = lineNo
+    filesData = pluginData.sourceFileLines
+    for name, amount in filesData:
+      if line <= amount: formatDict['filename'] = name; break
+      line -= amount
+    formatDict['line'] = line
+    # Append standard exception info
+    info = message.format(**formatDict)
+    if includeLocation:
+      info += ('\n  File "{directory}/{key}/{filename}"' + \
+      ', line {line}').format(**formatDict)
+    if includeFunction:
+      info += ', in {functionName}'.format(**formatDict)
+    if includeOrig:
+      info += '\n  {origName}: {origArgs}'.format(**formatDict)
+    # Done
+    super().__init__(info)
+
+class PluginStartupError(PluginError): pass
+
+class PluginSyntaxError(PluginStartupError):
   def __init__(self, pluginData, original):
-    pluginKey = pluginData.key
-    offset, code = original.args[1][2], original.args[1][3]
-    lineno = original.args[1][1]
-    for fileName, fileLines in pluginData.sourceFileLines:
-      if lineno <= fileLines: break
-      lineno -= fileLines
-    file = f'{pluginData.directory}/{pluginKey}/{fileName}'
-    super().__init__(f'There is a syntax error in plugin {pluginKey}\n' +\
-      f'  File "{file}", line {lineno}\n    {code}   '+\
-      ' '*offset+f'^\nSyntaxError: invalid syntax')
-    self.noTraceback = True
+    message = 'There is a syntax error in plugin {key}'
+    original.args = (original.args[0])
+    super().__init__(pluginData, original, message, lineNo=original.lineno,
+      msg=original.msg, offset=original.offset, lineCode=original.text)
 
-# Plugin / Executor
+class PluginLoadError(PluginStartupError):
+  def __init__(self, pluginData, original):
+    message = 'Error occurred during load of plugin {key}'
+    super().__init__(pluginData, original, message, includeOrig=True)
 
-class PluginConfigError(Exception):
-  def __init__(self, pluginKey, configPath):
-    super().__init__(f'Plugin {pluginKey}: config "{configPath}" does not exist')
-#
-#   File "D:\GoogleDrive\Coding\Repositories\Python\Rover-Related\RoverSoft\__PluginableCache_Controller\Interface.py", line 54
-#     self.statusWidgets = {}a
-#                            ^
-# SyntaxError: invalid syntax
+class PluginConfigError(PluginStartupError):
+  def __init__(self, plugin, configPath, original):
+    super().__init__(plugin, original,
+      'Plugin {key}: config "'+configPath+'" does not exist')
+
+
+# Plugin at Runtime
+
+class PluginRuntimeError(PluginError): pass
+
+class PluginInitError(PluginRuntimeError):
+  def __init__(self, plugin, original):
+    super().__init__(plugin.__pluginable__, original, \
+      'An error occurred during init of plugin {key}', includeOrig=True)
+
+class PluginTickError(PluginRuntimeError):
+  def __init__(self, plugin, original):
+    super().__init__(plugin.__pluginable__, original, \
+      'An error occurred during {key} plugin tick', includeOrig=True)
+
+class PluginEventError(PluginRuntimeError):
+  def __init__(self, plugin, eventKey, original):
+    super().__init__(plugin.__pluginable__, original, \
+      'An error occurred in {key}\'s handler of event ' + eventKey,
+      includeOrig=True)

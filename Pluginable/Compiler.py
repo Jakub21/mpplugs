@@ -43,39 +43,38 @@ class Compiler(LogIssuer):
         if location[:-3] not in ['Scope', 'Config', pluginKey]
         and location[0] != location[0].lower()
         and location.endswith('.py')]
-    taskFiles = [f'{baseDir}/{location}' for location in next(os.walk(baseDir))[2]
-      if location[1] != location[1].lower()
-      and location.endswith('.py')
-      and location[0] == '_']
 
     target = f'./{self.target}/{pluginKey}.py'
     ifnmkdir(self.target)
     open(target, 'w+').close()
 
-    sourceFileLines = [('_prefix_', \
-      Settings.Compiler.data.compilationPrefix.count('\n'))]
-    f = open(target, 'a', newline='\n')
-    f.write(Settings.Compiler.data.compilationPrefix)
+    allCode = Settings.Compiler.data.compilationPrefix
+    sourceFileLines = [['_prefix_', allCode.count('\n')]]
     filesOrdered = [
       ('Scope.py', scopeFile), ('Config.py', configFile),
       *[(x.split('/')[-1], x) for x in helperFiles],
-      *[(x.split('/')[-1], x) for x in taskFiles],
       (f'{pluginKey}.py', pluginFile),
     ]
     for name, chunk in filesOrdered:
       try:
         code = open(chunk).read()
-        f.write(code)
-        sourceFileLines += [(name, code.count('\n'))]
+        allCode += code
+        sourceFileLines += [[name, code.count('\n')]]
       except FileNotFoundError:
-        f.close()
         raise CompilerMissingFileError(chunk) from None
-    f.close()
-    pluginData = Namespace(key=pluginKey,
+    with open(target, 'a', newline='\n') as f:
+      f.write(allCode)
+    pluginData = Namespace(
+      key=pluginKey,
       directory = directory,
       loaded = False,
       sourceFileLines = sourceFileLines,
     )
+    try: exec(allCode)
+    except SyntaxError as exc:
+      raise PluginSyntaxError(pluginData, exc) from None
+    except Exception as exc:
+      raise PluginLoadError(pluginData, exc) from None
     self.prog.plugins[pluginKey] = pluginData
 
   def load(self):
@@ -92,21 +91,16 @@ class Compiler(LogIssuer):
 
   def loadPlugin(self, pluginKey):
     try: exec(f'from {self.target} import {pluginKey} as plugin')
-    except SyntaxError as exc:
-      raise CompilerSyntaxError(self.prog.plugins[pluginKey], exc)
+    except Exception as exc:
+      raise PluginLoadError(self.prog.plugins[pluginKey], exc)
 
     try: PluginClass = eval(f'plugin.{pluginKey}')
     except AttributeError:
       raise CompilerMissingClassError(pluginKey, pluginKey) from None
     instance = PluginClass(pluginKey)
+    for key, value in self.prog.plugins[pluginKey].items():
+      instance.__pluginable__[key] = value
 
-    instance.tasks = Namespace()
-    for k in dir(eval('plugin')):
-      if k[0] == '_' and k[1].lower() != k[1]:
-        task = eval(f'plugin.{k}')
-        task.key = k[1:]
-        task.plugin = instance
-        instance.tasks[k[1:]] = task
     try: instance.cnf = eval('plugin.Config')
     except AttributeError:
       raise CompilerMissingClassError(pluginKey, 'Config') from None

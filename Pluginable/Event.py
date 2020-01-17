@@ -20,10 +20,8 @@ class ErrorEvent:
     try: noTraceback = exception.noTraceback
     except AttributeError: noTraceback = False
     return {
-      'name': exception.__class__.__name__,
-      'info': exception.args[0],
-      'traceback': ''.join(format_tb(exception.__traceback__)),
-      'noTraceback': noTraceback,
+      'name': exception.name,
+      'info': exception.info,
     }
 
 
@@ -39,7 +37,7 @@ class KernelExcEvent(KernelEvent, ErrorEvent):
 
 class ExecutorEvent(Event):
   def __init__(self, issuer, id, **kwargs):
-    super().__init__(issuer.plugin.key, id, **kwargs)
+    super().__init__(issuer.key, id, **kwargs)
     mh.push(issuer.evntQueue, self)
 
 class ExecutorExcEvent(ExecutorEvent, ErrorEvent):
@@ -50,7 +48,7 @@ class ExecutorExcEvent(ExecutorEvent, ErrorEvent):
 
 class PluginEvent(Event):
   def __init__(self, issuer, id, **kwargs):
-    super().__init__(issuer.key, id, **kwargs)
+    super().__init__(issuer.__pluginable__.key, id, **kwargs)
     mh.push(issuer.executor.evntQueue, self)
 
 class PluginExcEvent(PluginEvent, ErrorEvent):
