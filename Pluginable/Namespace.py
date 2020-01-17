@@ -53,7 +53,7 @@ class Namespace:
       else:
         self.__repr_indent__ += 1
         r = '['
-        for xx in x: r += '\n' + ' '*indentWidth*(self.__repr_indent__+1) + choice(xx)
+        for xx in x: r += '\n' + ' '*indentWidth*(self.__repr_indent__+1) + str(choice(xx))
         r += '\n'+' '*indentWidth*self.__repr_indent__+']\n'
         self.__repr_indent__ -= 1
         return r
