@@ -38,6 +38,7 @@ class PluginError(PluginableException):
     formatDict = pluginData.__dict__
     # Parsing traceback
     traceback = ''.join(format_tb(original.__traceback__))
+    self.originalTraceback = traceback
     tracebackFileLines = [l for l in traceback.split('\n') if '  File "' in l]
     locationLine = [l for l in traceback.split('\n') if '  File "' in l][-1]
     fullFilePath = locationLine.split('"')[1]

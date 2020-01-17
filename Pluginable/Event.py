@@ -19,10 +19,13 @@ class ErrorEvent:
   def exceptionToDict(exception):
     try: noTraceback = exception.noTraceback
     except AttributeError: noTraceback = False
-    return {
+    result = {
       'name': exception.name,
       'info': exception.info,
     }
+    try: result['originalTraceback'] = exception.originalTraceback
+    except AttributeError: pass
+    return result
 
 
 class KernelEvent(Event):

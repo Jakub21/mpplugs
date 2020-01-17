@@ -157,6 +157,10 @@ class Program(LogIssuer):
 
   def onError(self, event):
     prefix = ['Insignificant', 'Critical'][event.critical]
-    Error(self, f'({prefix}) {event.name}: {event.info}')
+    errorMessage = f'({prefix}) {event.name}: {event.info}'
+    if Settings.Logger.appendOriginalTraceback:
+      try: errorMessage += '\n\nOriginal Traceback:\n' + event.originalTraceback
+      except AttributeError: pass
+    Error(self, errorMessage)
     self.phase = 'exception'
     if event.critical: self.quit()
