@@ -6,7 +6,7 @@ Pluginable helps to create modular applications with setup + loop structure comm
 ### Documentation
 - [Quick introduction](docs/QuickIntro.md) - Everything you need to know to get started
 - [Executable file](docs/Executable.md) - Guide on writing start-up files
-- [Create a plugin](docs/CratePlugin.md) - Guide on creating plugins
+- [Create a plugin](docs/CreatePlugin.md) - Guide on creating plugins
 - [List of program settings](docs/Settings.md) - List of settings in Program class
 - [Full API](docs/API.md) - All classes and methods listed and described
 
