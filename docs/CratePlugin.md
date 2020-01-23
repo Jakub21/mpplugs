@@ -40,7 +40,7 @@ To add config entries, simply add properties to `Config` class.
 You can also create nested configs by creating more classes inside `Config`.
 
 Contents of this class can be easily changed on program start-up from
-[executable file](docs/Executable.md#Configuring-plugins).
+[executable file](Executable.md#Configuring-plugins).
 
 ```python
 class Config:

@@ -32,7 +32,7 @@ prog.updateSettings({
 })
 
 ```
-For full list of available settings see [Settings section](docs/Settings.md)
+For full list of available settings see [Settings section](Settings.md)
 
 ### Custom settings
 You can also add custom settings with `customSettings` method.
@@ -58,4 +58,4 @@ prog.configPlugin('PluginToConfigure', {
 })
 
 ```
-Creating plugin configs is described in [Plugin config section](docs/PluginConfig.md)
+Creating plugin configs is described in [Plugin config section](PluginConfig.md)
