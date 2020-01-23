@@ -8,9 +8,6 @@ class Plugin(LogIssuer):
     self.__pluginable__ = Namespace(key=key, tick=0)
     self.setIssuerData('plugin', key)
 
-  def addToStatus(self, attr):
-    self.statusAttrs += [attr]
-
   def init(self):
     pass
 
