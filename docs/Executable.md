@@ -58,4 +58,4 @@ prog.configPlugin('PluginToConfigure', {
 })
 
 ```
-Creating plugin configs is described in [Plugin config section](PluginConfig.md)
+Creating plugin configs is described in [Plugin config section](CreatePlugin.md#Config)
