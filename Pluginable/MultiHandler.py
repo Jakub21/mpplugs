@@ -9,7 +9,6 @@ with functions they are wrapping
 def push(queue, item):
   try: queue.put(item)
   except (BrokenPipeError, EOFError): pass
-  except EOFError: pass
 
 def pop(queue):
   return queue.get()
