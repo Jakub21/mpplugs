@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="en" dir="ltr">
+<head>
+  <meta charset="utf-8">
+  <title> Pluginable docs </title>
+  <link href='https://fonts.googleapis.com/css?family=Montserrat' rel='stylesheet'>
+  <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet'>
+  <link rel="stylesheet" href="css/style.css">
+  <link rel="stylesheet" href="css/highlight_atom_one_dark.css">
+  <script src="js/highlight.pack.js" charset="utf-8"></script>
+  <script src="js/Domi.js" charset="utf-8"></script>
+  <script src="js/Script.js" charset="utf-8"></script>
+  <script type="text/javascript"> hljs.initHighlightingOnLoad(); </script>
+</head>
+<body onload="onload()">
+
+  <div id="Menu">
+    Font size
+    <a id="FontDecr" class="fontButton"> - </a>
+    <a id="FontIncr" class="fontButton"> + </a>
+  </div>
+
+
+
+  <section id="Index">
+    <h1> Pluginable docs index </h1>
+    <h4 class="title2"> Universal Python Framework. </h4>
+
+    <h3> What is this package for? </h3>
+    <p> Pluginable helps to create modular applications with setup + loop structure common in microcomputer and GUI programming. </p>
+
+    <h3> Repository </h3>
+    <p> Package on <a href="https://github.com/Jakub21/Pluginable"> GitHub </a> </p>
+
+    <h3> Get the latest version </h3>
+    <p> You can always find the latest stable release in the repo's <a href="https://github.com/Jakub21/Pluginable/releases"> releases tab</a>. This documentation was last updated for version <code>v0.4</code>. </p>
+
+    <h3> Meta </h3>
+    <h5> Documentation maintenance </h5>
+    <p> This documentation is maintained in a <a href="https://github.com/Jakub21/Pluginable-Docs">separate repository</a>. If you find an error or a lacking topic please open an issue or a PR. </p>
+    <h5> External resources </h5>
+    <ul>
+      <li> <a href="https://highlightjs.org/"> Highlight.js </a> (code blocks with syntax coloring, <code>atom_one_dark</code> theme was used) </li>
+      <li> <a href="https://github.com/Jakub21/Domi.js"> Domi.js </a> (section switching) </li>
+      <li> <a href="https://fonts.google.com/specimen/Montserrat"> Montserrat </a> (headings font) </li>
+      <li> <a href="https://fonts.google.com/specimen/Open+Sans"> Open Sans </a> (text font) </li>
+    </ul>
+    <h5> License </h5>
+    <p> Both the package and this documentation are released under MIT license. </p>
+    <h5> Authors </h5>
+    <ul>
+      <li> <a href="https://github.com/Jakub21">Jakub21</a> (owner) </li>
+    </ul>
+  </section>
+
+
+
+  <section id="Installation">
+    <h1> Installation </h1>
+    <p> The package was not uploaded to PIP. You must manually clone and install the package. </p>
+    <h5> Cloning </h5>
+    <p> Create temporary directory and run </p>
+    <pre><code class="text">
+git init
+git remote add origin https://github.com/Jakub21/Pluginable.git
+git pull origin master
+    </code></pre>
+    <h5> Installation </h5>
+    <p> To install downloaded package with PIP, run </p>
+    <pre><code class="text">
+pip install .
+    </code></pre>
+    <p> In case the above did not work you can also try </p>
+    <pre><code class="text">
+python setup.py install
+    </code></pre>
+  </section>
+
+
+
+  <section id="QuickIntro">
+    <h1> Quick introduction to Pluginable </h1>
+    <p> Pluginable can be used to create modular programs. Here's how to do it. </p>
+
+    <h3> How Pluginable programs work </h3>
+    <ul>
+      <li>On program start-up <code>init</code> method of each plugin is executed</li>
+      <li>Until program is closed <code>update</code> method is executed in loop</li>
+      <li>Just before program exits <code>quit</code> method is called</li>
+      <li>Plugins can issue events and have event handler methods assigned</li>
+      <li>Each plugin runs in separate processes so the only way to communicate is with events</li>
+    </ul>
+    <p> Pluginable enforces coding practices that might be considered unorthodox, beware </p>
+
+    <h3> Hello world program </h3>
+    <p> First, create main program file <code>program.py</code>. This code runs in main process. Other processes use this one to communicate with each other. </p>
+    <pre><code class="python">
+import Pluginable as plg # Import Pluginable
+
+if __name__ == '__main__':
+  prog = plg.Program('MyBasicProgram') # Create program
+  prog.updateSettings({ # Method for changing program settings
+    'Compiler.pluginDirectories': ['./demoPlugins'], # Add plugins to your program
+  })
+  prog.preload() # Prepare plugins
+  prog.run() # Create plugin instances in separate processes, exec init and start loop
+    </code></pre>
+    <p> This code creates program instance, then tells compiler where to look for plugins. The <code>preload</code> method compiles plugins into single-file form. Those files are deleted once your program stops. </p>
+    <p> Note that <code>run</code> method is blocking the main process. </p>
+
+    <p> Main process is only used to coordinate tasks and will not execute any of your code. For that you need plugins. Plugin consists of 3 mandatory files: <code>Config.py</code> and <code>Scope.py</code> and a file that has the same name as your plugin. Those must be placed in a directory that is also named after your plugin. For the program to load the plugin its parent directory must be added in program's settings. </p>
+    <p> In our example, after adding plugin named <code>FirstDemo</code> the file structure would look like this:
+    <pre><code></p>
+project/
+|- demoPlugins/
+|  |- FirstDemo/
+|  |  |- Config.py
+|  |  |- FirstDemo.py (main plugin file)
+|  |  |- Scope.py (definitions file)
+|- program.py
+    </code></pre>
+
+    <p> In <code>FirstDemo.py</code> there must be a class that, again, has name of the plugin. Also it must inherit from package's <code>Plugin</code> class that is made available in this file during startup. We also need <code>init</code> and <code>update</code> methods that were mentioned on the very start of this guide. Generally empty plugin would look like this:</p>
+    <pre><code class="python">
+class FirstDemo(Plugin):
+  def init(self):
+    super().init()
+
+  def update(self):
+    super().update()
+
+    </code></pre>
+    <p> Note the <code>super</code> methods calls. Those are required for the program to run correctly. </p>
+
+    <p> Next required file is <code>Config.py</code> This file must contain a class named <code>Config</code> but it can be left empty. When program starts contents of this class are copied to <code>cnf</code> property of the plugin. Using this class to store configurable variables is recommended because they can be modified from main program script. </p>
+    <pre><code class="python">
+class Config:
+  pass
+    </code></pre>
+    <p> Last required file is <code>Scope.py</code> but it can be left empty. This file is where you can define variables accessible in whole plugin process or import packages. In more complex plugins it matters that you do this in this file. </p>
+
+    <p> You can now check if your newly created program runs but at this point it would only print some initialization logs. </p>
+
+
+    <h3> Using built-in Logger </h3>
+
+    <p> Pluginable has logger that includes information on where in program the log was emitted and a timestamp. The logs are colored depending on their importance. To emit a log use one of the built-in methods. </p>
+    <pre><code class="python">
+Debug(plugin, *message) # magenta timestamp, gray origin + message
+Info(plugin, *message) # magenta timestamp, white origin + message
+Note(plugin, *message) # cyan timestamp + origin, white message
+Warn(plugin, *message) # all yellow
+Error(plugin, *message) # all red
+    </code></pre>
+    <p> Colors can be changed or turned off in program settings. This logger will be used later in the guide. </p>
+
+    <h3> Events system </h3>
+
+    <p> For this section we will need two plugins. Create plugin <code>SecondDemo</code> by repeating steps from the previous section. </p>
+
+    <p> To communicate between processes events system must be used. Every event triggers its handlers in all plugins of the program. </p>
+    <pre><code class="python"> # FirstDemo.py
+class FirstDemo(Plugin):
+  def init(self):
+    super().init()
+    self.addEventHandler('Dummy', self.onDummy) # Add handler
+
+  def update(self):
+    super().update()
+
+  def onDummy(self, event):
+    Note(self, f'FirstDemo received Dummy (apples = {event.apples})')
+    </code></pre>
+    <pre><code class="python"> # SecondDemo.py
+class SecondDemo(Plugin):
+  def init(self):
+    super().init()
+    self.apples = 4
+
+  def update(self):
+    super().update()
+    if not(self.__pluginable__.tick % 60):
+      Debug(self, f'Emitting Dummy (apples = {self.apples})')
+      Event(self, 'Dummy', apples=self.apples)
+      self.apples = (self.apples + 3) % 13
+    </code></pre>
+    <p> See Plugin class API for more on <code>__pluginable__</code> property, it will not be discussed in this guide. It only was used to limit rate at which events are fired. </p>
+    <p> You could add handler for events with <code>Dummy</code> ID and it would get called as well. You can see that any keyword argument passed to the event constructor will be added as its property. This has limitation of only allowing <a href="https://docs.python.org/3/library/pickle.html"> picklable objects</a>. </p>
+
+    <h3> Summary </h3>
+    <p> This package has more features that were not described here, this is what you need to get started. For more please refer to the <code>API</code> sections. You can request that this guide is extended by opening an issue. You can also extend it yourself and open a pull request. </p>
+  </section>
+
+
+
+  <section id="Program">
+    <h1> Program </h1>
+  </section>
+
+
+
+  <section id="Compiler">
+    <h1> Compiler </h1>
+  </section>
+
+
+
+  <section id="Executor">
+    <h1> Executor </h1>
+  </section>
+
+
+
+  <section id="Plugin">
+    <h1> Plugin </h1>
+  </section>
+
+
+
+  <div class="clear"> </div>
+</body>
+</html>
+
+<!-- <pre><code class="python">
+</code></pre> -->
