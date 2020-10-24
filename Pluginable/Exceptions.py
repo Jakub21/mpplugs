@@ -63,13 +63,19 @@ class PluginError(PluginableException):
     formatDict['line'] = line
     # Append standard exception info
     info = message.format(**formatDict)
-    if includeLocation:
-      info += ('\n  File "{directory}/{key}/{filename}"' + \
-      ', line {line}').format(**formatDict)
-    if includeFunction:
-      info += ', in {functionName}'.format(**formatDict)
-    if includeOrig:
-      info += '\n  {origName}: {origArgs}'.format(**formatDict)
+    try:
+      if includeLocation:
+        info += ('\n  File "{directory}/{key}/{filename}"' + \
+        ', line {line}').format(**formatDict)
+    except KeyError: pass
+    try:
+      if includeFunction:
+        info += ', in {functionName}'.format(**formatDict)
+    except KeyError: pass
+    try:
+      if includeOrig:
+        info += '\n  {origName}: {origArgs}'.format(**formatDict)
+    except KeyError: pass
     # Done
     super().__init__(info)
 
