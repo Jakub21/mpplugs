@@ -156,7 +156,7 @@ class Program(LogIssuer):
         mh.push(plugin.queue, KernelEvent('ProgramInitDone', nodes=allNodes))
 
   def onError(self, event):
-    prefix = ['Insignificant', 'Critical'][event.critical]
+    prefix = ['EventError', 'Critical'][event.critical]
     errorMessage = f'({prefix}) {event.name}: {event.info}'
     if Settings.Logger.appendOriginalTraceback:
       try: errorMessage += '\n\nOriginal Traceback:\n' + event.originalTraceback
