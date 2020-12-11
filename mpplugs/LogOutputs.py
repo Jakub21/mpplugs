@@ -1,6 +1,6 @@
 import sys
 
-from Pluginable.Namespace import Namespace
+from mpplugs.Namespace import Namespace
 Levels = Namespace(Debug = 0, Info = 1, Note = 2, Warn = 3, Critical = 4)
 
 class StreamOutput:

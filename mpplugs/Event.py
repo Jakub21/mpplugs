@@ -1,4 +1,4 @@
-import Pluginable.MultiHandler as mh
+import mpplugs.MultiHandler as mh
 from traceback import format_tb
 
 class Event:
@@ -51,7 +51,7 @@ class ExecutorExcEvent(ExecutorEvent, ErrorEvent):
 
 class PluginEvent(Event):
   def __init__(self, issuer, id, **kwargs):
-    super().__init__(issuer.__pluginable__.key, id, **kwargs)
+    super().__init__(issuer.__mpplugs__.key, id, **kwargs)
     mh.push(issuer.executor.evntQueue, self)
 
 class PluginExcEvent(PluginEvent, ErrorEvent):

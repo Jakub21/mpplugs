@@ -1,7 +1,7 @@
-from Pluginable.Namespace import Namespace
+from mpplugs.Namespace import Namespace
 from traceback import format_tb
 
-class PluginableException(Exception):
+class MpPlugsException(Exception):
   def __init__(self, *args, **kwargs):
     super().__init__(*args, **kwargs)
     self.name = self.__class__.__name__
@@ -9,7 +9,7 @@ class PluginableException(Exception):
 
 # Compiler
 
-class CompilerError(PluginableException):
+class CompilerError(MpPlugsException):
   pass
 
 class CompilerNoDirectoryError(CompilerError):
@@ -31,7 +31,7 @@ class CompilerMissingClassError(CompilerError):
 
 # Plugin
 
-class PluginError(PluginableException):
+class PluginError(MpPlugsException):
   def __init__(self, pluginData, original, message, lineNo=None, msg=None,
       offset=None, lineCode=None, includeLocation=True, includeFunction=True,
       includeOrig=False):
@@ -105,16 +105,16 @@ class PluginRuntimeError(PluginError): pass
 
 class PluginInitError(PluginRuntimeError):
   def __init__(self, plugin, original):
-    super().__init__(plugin.__pluginable__, original, \
+    super().__init__(plugin.__mpplugs__, original, \
       'An error occurred during init of plugin {key}', includeOrig=True)
 
 class PluginTickError(PluginRuntimeError):
   def __init__(self, plugin, original):
-    super().__init__(plugin.__pluginable__, original, \
+    super().__init__(plugin.__mpplugs__, original, \
       'An error occurred during {key} plugin tick', includeOrig=True)
 
 class PluginEventError(PluginRuntimeError):
   def __init__(self, plugin, eventKey, original):
-    super().__init__(plugin.__pluginable__, original, \
+    super().__init__(plugin.__mpplugs__, original, \
       'An error occurred in {key}\'s handler of event ' + eventKey,
       includeOrig=True)

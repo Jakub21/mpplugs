@@ -2,7 +2,7 @@
 <html lang="en" dir="ltr">
 <head>
   <meta charset="utf-8">
-  <title> Pluginable docs </title>
+  <title> MP PLugs documentation </title>
   <link href='https://fonts.googleapis.com/css?family=Montserrat' rel='stylesheet'>
   <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet'>
   <link rel="stylesheet" href="css/style.css">
@@ -23,21 +23,21 @@
 
 
   <section id="Index">
-    <h1> Pluginable docs index </h1>
+    <h1> MP PLugs documentation index </h1>
     <h4 class="title2"> Universal Python Framework. </h4>
 
     <h3> What is this package for? </h3>
-    <p> Pluginable helps to create modular applications with setup + loop structure common in microcomputer and GUI programming. </p>
+    <p> MP PLugs can be used to create modular applications with setup + loop structure common in microcomputer and GUI programming. </p>
 
     <h3> Repository </h3>
-    <p> Package on <a href="https://github.com/Jakub21/Pluginable"> GitHub </a> </p>
+    <p> Package on <a href="https://github.com/Jakub21/mpplugs"> GitHub </a> </p>
 
     <h3> Get the latest version </h3>
-    <p> You can always find the latest stable release in the repo's <a href="https://github.com/Jakub21/Pluginable/releases"> releases tab</a>. This documentation was last updated for version <code>v0.4</code>. </p>
+    <p> Latest release can be found <a href="https://github.com/Jakub21/mpplugs/releases/latest">here</a>. This documentation was last updated for version <code>v0.4</code>. </p>
 
     <h3> Meta </h3>
     <h5> Documentation maintenance </h5>
-    <p> This documentation is maintained in a <a href="https://github.com/Jakub21/Pluginable-Docs">separate repository</a>. If you find an error or a lacking topic please open an issue or a PR. </p>
+    <p> This documentation is maintained in a <code>docs</code> folder. If you find an error or a lacking topic please open an issue or a PR. </p>
     <h5> External resources </h5>
     <ul>
       <li> <a href="https://highlightjs.org/"> Highlight.js </a> (code blocks with syntax coloring, <code>atom_one_dark</code> theme was used) </li>
@@ -62,7 +62,7 @@
     <p> Create temporary directory and run </p>
     <pre><code class="text">
 git init
-git remote add origin https://github.com/Jakub21/Pluginable.git
+git remote add origin https://github.com/Jakub21/mpplugs.git
 git pull origin master
     </code></pre>
     <h5> Installation </h5>
@@ -79,10 +79,10 @@ python setup.py install
 
 
   <section id="QuickIntro">
-    <h1> Quick introduction to Pluginable </h1>
-    <p> Pluginable can be used to create modular programs. Here's how to do it. </p>
+    <h1> Quick introduction to MP PLugs </h1>
+    <p> MP PLugs can be used to create modular programs. Here's how to do it. </p>
 
-    <h3> How Pluginable programs work </h3>
+    <h3> How MP PLugs programs work </h3>
     <ul>
       <li>On program start-up <code>init</code> method of each plugin is executed</li>
       <li>Until program is closed <code>update</code> method is executed in loop</li>
@@ -90,12 +90,12 @@ python setup.py install
       <li>Plugins can issue events and have event handler methods assigned</li>
       <li>Each plugin runs in separate processes so the only way to communicate is with events</li>
     </ul>
-    <p> Pluginable enforces coding practices that might be considered unorthodox, beware </p>
+    <p> MP PLugs enforces coding practices that might be considered unorthodox, beware </p>
 
     <h3> Hello world program </h3>
     <p> First, create main program file <code>program.py</code>. This code runs in main process. Other processes use this one to communicate with each other. </p>
     <pre><code class="python">
-import Pluginable as plg # Import Pluginable
+import mpplugs as plg # Import mp plugs
 
 if __name__ == '__main__':
   prog = plg.Program('MyBasicProgram') # Create program
@@ -144,7 +144,7 @@ class Config:
 
     <h3> Using built-in Logger </h3>
 
-    <p> Pluginable has logger that includes information on where in program the log was emitted and a timestamp. The logs are colored depending on their importance. To emit a log use one of the built-in methods. </p>
+    <p> MP Plugs has logger that includes information on where in program the log was emitted and a timestamp. The logs are colored depending on their importance. To emit a log use one of the built-in methods. </p>
     <pre><code class="python">
 Debug(plugin, *message) # magenta timestamp, gray origin + message
 Info(plugin, *message) # magenta timestamp, white origin + message
@@ -179,12 +179,12 @@ class SecondDemo(Plugin):
 
   def update(self):
     super().update()
-    if not(self.__pluginable__.tick % 60):
+    if not(self.__mpplugs__.tick % 60):
       Debug(self, f'Emitting Dummy (apples = {self.apples})')
       Event(self, 'Dummy', apples=self.apples)
       self.apples = (self.apples + 3) % 13
     </code></pre>
-    <p> See Plugin class API for more on <code>__pluginable__</code> property, it will not be discussed in this guide. It only was used to limit rate at which events are fired. </p>
+    <p> See Plugin class API for more on <code>__mpplugs__</code> property, it will not be discussed in this guide. It only was used to limit rate at which events are fired. </p>
     <p> You could add handler for events with <code>Dummy</code> ID and it would get called as well. You can see that any keyword argument passed to the event constructor will be added as its property. This has limitation of only allowing <a href="https://docs.python.org/3/library/pickle.html"> picklable objects</a>. </p>
 
     <h3> Summary </h3>

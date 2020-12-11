@@ -1,4 +1,4 @@
-from Pluginable.Namespace import Namespace
+from mpplugs.Namespace import Namespace
 from os import name as osName, system
 
 if osName == 'nt': system('color')

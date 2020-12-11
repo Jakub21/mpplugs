@@ -1,16 +1,16 @@
 from datetime import datetime
 import multiprocessing as mpr
-from Pluginable.Exceptions import *
-from Pluginable.Settings import Settings
-from Pluginable.Logger import *
-from Pluginable.Namespace import Namespace
-from Pluginable.Event import *
-from Pluginable.TpsMonitor import TpsMonitor
-import Pluginable.MultiHandler as mh
+from mpplugs.Exceptions import *
+from mpplugs.Settings import Settings
+from mpplugs.Logger import *
+from mpplugs.Namespace import Namespace
+from mpplugs.Event import *
+from mpplugs.TpsMonitor import TpsMonitor
+import mpplugs.MultiHandler as mh
 
 class Executor(LogIssuer):
   def __init__(self, plugin, quitStatus, plgnQueue, evntQueue):
-    self.key = plugin.__pluginable__.key
+    self.key = plugin.__mpplugs__.key
     self.setIssuerData('plugin', self.key)
     self.tpsMon = TpsMonitor(Settings.Kernel.MaxExecutorTicksPerSec)
     self.quitting = False

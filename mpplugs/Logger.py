@@ -1,7 +1,7 @@
 from datetime import datetime
-from Pluginable.Namespace import Namespace
-from Pluginable.Settings import Settings
-from Pluginable.LogColor import LogColor as CLR
+from mpplugs.Namespace import Namespace
+from mpplugs.Settings import Settings
+from mpplugs.LogColor import LogColor as CLR
 
 class LogIssuer:
   def setIssuerData(self, issuerType, entPath):

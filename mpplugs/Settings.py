@@ -1,6 +1,6 @@
-from Pluginable.Namespace import Namespace
-from Pluginable.Event import Event
-from Pluginable.LogOutputs import stdout, stderr
+from mpplugs.Namespace import Namespace
+from mpplugs.Event import Event
+from mpplugs.LogOutputs import stdout, stderr
 from datetime import datetime
 
 Settings = Namespace(
@@ -17,15 +17,15 @@ Settings = Namespace(
   ),
 
   Compiler = Namespace(
-    cacheDirectory = '_PluginableCache',
+    cacheDirectory = '_MpplugsCache',
     pluginDirectories = [],
     omitPlugins = [],
     data = Namespace(
       compilationPrefix = '''
-# File compiled by pluginable, any edits will be automatically overwritten
-from Pluginable import Plugin, Settings, Namespace
-from Pluginable import PluginEvent as Event
-from Pluginable.Logger import Debug, Info, Note, Warn, Error
+# File compiled by mpplugs, any edits will be automatically overwritten
+from mpplugs import Plugin, Settings, Namespace
+from mpplugs import PluginEvent as Event
+from mpplugs.Logger import Debug, Info, Note, Warn, Error
 
 # Plugin code
 

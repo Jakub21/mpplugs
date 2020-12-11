@@ -1,14 +1,14 @@
 import multiprocessing as mpr
 from time import sleep
 import os
-from Pluginable.Executor import runPlugin
-from Pluginable.Logger import *
-from Pluginable.Settings import Settings
-from Pluginable.Namespace import Namespace
-from Pluginable.FileManager import ifnmkdir, rmtree
-from Pluginable.Event import KernelEvent
-from Pluginable.Exceptions import *
-import Pluginable.MultiHandler as mh
+from mpplugs.Executor import runPlugin
+from mpplugs.Logger import *
+from mpplugs.Settings import Settings
+from mpplugs.Namespace import Namespace
+from mpplugs.FileManager import ifnmkdir, rmtree
+from mpplugs.Event import KernelEvent
+from mpplugs.Exceptions import *
+import mpplugs.MultiHandler as mh
 
 class Compiler(LogIssuer):
   def __init__(self, prog):
@@ -99,7 +99,7 @@ class Compiler(LogIssuer):
       raise CompilerMissingClassError(pluginKey, pluginKey) from None
     instance = PluginClass(pluginKey)
     for key, value in self.prog.plugins[pluginKey].items():
-      instance.__pluginable__[key] = value
+      instance.__mpplugs__[key] = value
 
     try: instance.cnf = eval('plugin.Config')
     except AttributeError:

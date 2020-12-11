@@ -1,17 +1,13 @@
-## Pluginable
+## MP Plugs
 Universal Python Framework.
 
-Pluginable helps to create modular applications with setup + loop structure common in microcomputer and GUI programming.
+MPPlugs helps to create modular applications with setup + loop structure common in microcomputer and GUI programming.
 
 ### Documentation
-- [Quick introduction](docs/QuickIntro.md) - Everything you need to know to get started
-- [Executable file](docs/Executable.md) - Guide on writing start-up files
-- [Create a plugin](docs/CreatePlugin.md) - Guide on creating plugins
-- [List of program settings](docs/Settings.md) - List of settings in Program class
-- [Full API](docs/API.md) - All classes and methods listed and described
+Documentation is available [here](https://jakub21.github.io/mpplugs/)
 
 ### Latest stable version
-[Release v0.4](https://github.com/Jakub21/Pluginable/releases/tag/v0.4)
+[Release v0.4](https://github.com/Jakub21/mpplugs/releases/latest)
 
 **Features**
 - init + loop approach
