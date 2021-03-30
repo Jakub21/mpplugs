@@ -2,7 +2,7 @@
 <html lang="en" dir="ltr">
 <head>
   <meta charset="utf-8">
-  <title> MP PLugs documentation </title>
+  <title> MP Plugs documentation </title>
   <link href='https://fonts.googleapis.com/css?family=Montserrat' rel='stylesheet'>
   <link href='https://fonts.googleapis.com/css?family=Open+Sans' rel='stylesheet'>
   <link rel="stylesheet" href="css/style.css">
@@ -23,14 +23,17 @@
 
 
   <section id="Index">
-    <h1> MP PLugs documentation index </h1>
+    <h1> MP Plugs documentation index </h1>
     <h4 class="title2"> Universal Python Framework. </h4>
 
     <h3> What is this package for? </h3>
-    <p> MP PLugs can be used to create modular applications with setup + loop structure common in microcomputer and GUI programming. </p>
+    <p> MP Plugs can be used to create modular applications with setup + loop structure common in microcomputer and GUI programming. </p>
 
-    <h3> Repository </h3>
-    <p> Package on <a href="https://github.com/Jakub21/mpplugs"> GitHub </a> </p>
+    <h3> Links </h3>
+    <ul>
+      <li> <a href="https://github.com/Jakub21/mpplugs"> Git repository </a> </li>
+      <li> <a href="https://github.com/Jakub21/mpplugs"> Pypi project </a> </li>
+    </ul>
 
     <h3> Get the latest version </h3>
     <p> Latest release can be found <a href="https://github.com/Jakub21/mpplugs/releases/latest">here</a>. This documentation was last updated for version <code>v0.4</code>. </p>
@@ -57,21 +60,15 @@
 
   <section id="Installation">
     <h1> Installation </h1>
-    <p> The package was not uploaded to PIP. You must manually clone and install the package. </p>
-    <h5> Cloning </h5>
-    <p> Create temporary directory and run </p>
+
+    <h3> Installation from PIP </h3>
     <pre><code class="text">
-git init
-git remote add origin https://github.com/Jakub21/mpplugs.git
-git pull origin master
+pip install mpplugs
     </code></pre>
-    <h5> Installation </h5>
-    <p> To install downloaded package with PIP, run </p>
+
+    <h3> Manual installation </h3>
     <pre><code class="text">
-pip install .
-    </code></pre>
-    <p> In case the above did not work you can also try </p>
-    <pre><code class="text">
+git clone https://github.com/Jakub21/mpplugs.git
 python setup.py install
     </code></pre>
   </section>
@@ -79,10 +76,10 @@ python setup.py install
 
 
   <section id="QuickIntro">
-    <h1> Quick introduction to MP PLugs </h1>
-    <p> MP PLugs can be used to create modular programs. Here's how to do it. </p>
+    <h1> Quick introduction to MP Plugs </h1>
+    <p> MP Plugs can be used to create modular programs. Here's how to do it. </p>
 
-    <h3> How MP PLugs programs work </h3>
+    <h3> How MP Plugs programs work </h3>
     <ul>
       <li>On program start-up <code>init</code> method of each plugin is executed</li>
       <li>Until program is closed <code>update</code> method is executed in loop</li>
@@ -90,7 +87,7 @@ python setup.py install
       <li>Plugins can issue events and have event handler methods assigned</li>
       <li>Each plugin runs in separate processes so the only way to communicate is with events</li>
     </ul>
-    <p> MP PLugs enforces coding practices that might be considered unorthodox, beware </p>
+    <p> MP Plugs enforces coding practices that might be considered unorthodox, beware </p>
 
     <h3> Hello world program </h3>
     <p> First, create main program file <code>program.py</code>. This code runs in main process. Other processes use this one to communicate with each other. </p>
